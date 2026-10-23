@@ -73,12 +73,9 @@ async function run(){
     await page.locator(".selection-bar").waitFor();
     await page.getByRole("button",{name:"B",exact:true}).click();
     await page.locator(".ProseMirror > p").first().click({clickCount:3});
-    console.log("COMMENT preselection",JSON.stringify(await page.evaluate(()=>window.getSelection()?.toString())));
     await page.getByRole("button",{name:"Comment",exact:true}).click();
     await page.getByPlaceholder("Leave a note on this block…").fill("Needs review");
     await page.getByRole("button",{name:"Add comment"}).click();
-    console.log("COMMENT after save",JSON.stringify(await page.locator(".comments").allTextContents()),
-      JSON.stringify(await page.locator(".ProseMirror > p").first().evaluate(el=>el.outerHTML.slice(0,600))));
     assert.ok(await page.locator(".ProseMirror .comment-anchor").count()>0);
     assert.ok(await page.locator(".ProseMirror strong").count()>0);
     await page.locator(".ProseMirror > p").first().click();

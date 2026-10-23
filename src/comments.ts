@@ -13,7 +13,7 @@ export function anchorComment(editor:Editor,target:CommentTarget,id:string):stri
   const node=editor.state.doc.nodeAt(target.pos);
   let from=target.from ?? editor.state.selection.from;
   let to=target.to ?? editor.state.selection.to;
-  if(from>=to&&node){
+  if((from>=to||!editor.state.doc.textBetween(from,to," ").trim())&&node){
     let anchored=false;
     node.descendants((child,offset)=>{
       if(anchored)return false;
