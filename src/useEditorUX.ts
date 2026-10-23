@@ -138,6 +138,7 @@ export function useEditorUX(editor: Editor | null) {
     setPopup(null);
     const source=hover.pos,startX=event.clientX,startY=event.clientY;
     dragging.current=true;
+    console.log("UX-DRAG down",JSON.stringify({source,startX,startY}));
     let moved=false;
     const clear=()=>{
       window.removeEventListener("pointermove",move);
@@ -156,6 +157,7 @@ export function useEditorUX(editor: Editor | null) {
       if(!moved)return;
       const target=document.elementFromPoint(e.clientX,e.clientY);
       const found=topBlock(editor,target);
+      console.log("UX-DRAG up",JSON.stringify({moved,source,target:found?.pos,tag:target?.nodeName,x:e.clientX,y:e.clientY}));
       if(found&&found.pos!==source){
         const node=editor.state.doc.nodeAt(found.pos);
         const rect=found.element.getBoundingClientRect();
@@ -164,7 +166,7 @@ export function useEditorUX(editor: Editor | null) {
       }
       setHover(null);
     };
-    const cancel=()=>{clear();setHover(null);};
+    const cancel=()=>{console.log("UX-DRAG cancel");clear();setHover(null);};
     window.addEventListener("pointermove",move);
     window.addEventListener("pointerup",end);
     window.addEventListener("pointercancel",cancel);

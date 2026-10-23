@@ -15,6 +15,7 @@ async function run(){
     const context=await browser.newContext({viewport:{width,height:860}});
     const page=await context.newPage(), errors=[];
     page.on("pageerror",error=>errors.push(error.message));
+    page.on("console",msg=>{if(msg.text().startsWith("UX-DRAG"))console.log("PAGE "+width+" "+msg.text());});
     await page.goto("http://127.0.0.1:4173");
     await page.locator(".ProseMirror").waitFor();
     assert.ok(await page.locator(".ProseMirror > h1").count());
@@ -98,6 +99,7 @@ async function run(){
     await page.mouse.down();
     await page.mouse.move(to.x+18,to.y+to.height*0.25,{steps:16});
     await page.mouse.up();
+    console.log("REORDER SIBLINGS",width,await source.evaluate(el=>[el.previousElementSibling?.tagName,el.nextElementSibling?.tagName]));
     assert.equal(await source.evaluate(el=>el.previousElementSibling?.tagName),"H1","drag moved heading above duplicate paragraphs");
     assert.deepEqual(errors,[]);
     await context.close();console.log("PASS Chromium width="+width);
