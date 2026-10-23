@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import type { DragEvent } from "react";
 import type { Hover } from "./useEditorUX";
-export function Gutter({hover,onMenu,onInsert,onDragStart,onLeave}:{
-  hover:Hover|null;onMenu:()=>void;onInsert:()=>void;onDragStart:(event:DragEvent<HTMLElement>)=>void;onLeave?:()=>void;
+export function Gutter({hover,onMenu,onInsert,onDragStart,onDragEnd,onLeave}:{
+  hover:Hover|null;onMenu:()=>void;onInsert:()=>void;onDragStart:(event:DragEvent<HTMLElement>)=>void;onDragEnd?:()=>void;onLeave?:()=>void;
 }) {
   const [point,setPoint]=useState({left:-100,top:-100});
   useEffect(() => {
@@ -18,7 +18,7 @@ export function Gutter({hover,onMenu,onInsert,onDragStart,onLeave}:{
   return <div className="ux-gutter" data-ux-gutter style={point} onMouseLeave={onLeave}>
     {hover.empty && <button title="Add block" aria-label="Add block" onPointerDown={e=>e.preventDefault()} onClick={onInsert}>+</button>}
     <span role="button" tabIndex={0} draggable aria-label="Drag or open block actions" title="Drag to reorder · click for actions"
-      onDragStart={onDragStart} onClick={onMenu}
+      onDragStart={onDragStart} onDragEnd={onDragEnd} onClick={onMenu}
       onKeyDown={e=>{if(e.key==="Enter" || e.key===" "){e.preventDefault();onMenu();}}}>⠿</span>
   </div>;
 }

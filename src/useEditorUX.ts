@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { MouseEvent as ReactMouse, DragEvent as ReactDrag } from "react";
 import type { Editor } from "@tiptap/react";
 import { kindFor, slashQuery } from "./logic";
@@ -33,6 +33,7 @@ function caretAnchor(editor: Editor): Anchor {
 }
 export function useEditorUX(editor: Editor | null) {
   const [hover,setHover] = useState<Hover|null>(null);
+  const dragging=useRef(false);
   const [popup,setPopup] = useState<Popup|null>(null);
   const [selectionAnchor,setSelectionAnchor] = useState<Anchor|null>(null);
   const close = useCallback(() => setPopup(null),[]);
@@ -80,7 +81,7 @@ export function useEditorUX(editor: Editor | null) {
     };
   },[editor,trackSelection,popup]);
   const onMouseMove = (event: ReactMouse<HTMLDivElement>) => {
-    if(!editor) return;
+    if(!editor || dragging.current) return;
     const found = topBlock(editor,event.target);
     if(found && (found.pos !== hover?.pos || found.element !== hover.element)) setHover(found);
   };
@@ -132,10 +133,12 @@ export function useEditorUX(editor: Editor | null) {
       anchor:{element:entry.element,point:{x:r.left-30,y:r.top+12},offset:{x:-30,y:12},mode:"pointer"}});
   };
   const onDragStart = (event: ReactDrag<HTMLElement>, source: number) => {
+    dragging.current=true;
     event.dataTransfer.setData("application/x-doc-block",String(source));
     event.dataTransfer.effectAllowed="move";
   };
   const onDrop = (event: ReactDrag<HTMLDivElement>) => {
+    dragging.current=false;
     if(!editor) return;
     const raw=event.dataTransfer.getData("application/x-doc-block");
     if(!raw) return;
@@ -145,9 +148,10 @@ export function useEditorUX(editor: Editor | null) {
     if(found && Number.isInteger(source)) moveBlock(editor,source,found.pos);
     setHover(null);setPopup(null);
   };
+  const onDragEnd=()=>{dragging.current=false;setHover(null);};
   const onDragOver = (event: ReactDrag<HTMLDivElement>) => {
     if(event.dataTransfer.types.includes("application/x-doc-block")) event.preventDefault();
   };
-  return {hover,setHover,popup,setPopup,selectionAnchor,setSelectionAnchor,close,
-    onMouseMove,onContextMenu,onClick,openGutter,onDragStart,onDrop,onDragOver,trackSelection};
+  return {hover,setHover,dragging,popup,setPopup,selectionAnchor,setSelectionAnchor,close,
+    onMouseMove,onContextMenu,onClick,openGutter,onDragStart,onDragEnd,onDrop,onDragOver,trackSelection};
 }

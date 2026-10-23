@@ -87,6 +87,11 @@ async function run(){
     await page.evaluate(()=>window.scrollTo(0,220));
     const anchored=await page.locator(".ux-menu").boundingBox();
     assert.ok(anchored && Number.isFinite(anchored.y));
+    const source=page.locator(".ProseMirror > p").first();
+    const sourceText=await source.textContent();
+    await source.hover();
+    await page.getByRole("button",{name:"Drag or open block actions"}).dragTo(page.locator(".ProseMirror > blockquote"));
+    assert.notEqual(await page.locator(".ProseMirror > p").first().textContent(),sourceText,"drag reordered a block");
     assert.deepEqual(errors,[]);
     await context.close();console.log("PASS Chromium width="+width);
   }

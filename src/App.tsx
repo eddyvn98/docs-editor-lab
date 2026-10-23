@@ -116,7 +116,7 @@ export default function App() {
         <div className="page-meta"><span className="doc-icon">▤</span> Document <span>·</span> Editable playground</div>
         <h1 className="document-title">Product planning notes</h1>
         <p className="document-hint">Select text, hover a block, or right-click an image or table cell. Your edits stay in this browser.</p>
-        <div className="editor-frame" onMouseMove={ux.onMouseMove} onMouseLeave={event=>{if(!(event.relatedTarget instanceof Element && event.relatedTarget.closest("[data-ux-gutter]")))ux.setHover(null);}}
+        <div className="editor-frame" onMouseMove={ux.onMouseMove} onMouseLeave={event=>{if(!ux.dragging.current && !(event.relatedTarget instanceof Element && event.relatedTarget.closest("[data-ux-gutter]")))ux.setHover(null);}}
           onContextMenu={ux.onContextMenu} onClick={ux.onClick} onDragOver={event=>{
             if(event.dataTransfer.types.includes("Files"))event.preventDefault();else ux.onDragOver(event);
           }}
@@ -146,7 +146,8 @@ export default function App() {
     <Gutter hover={ux.hover} onInsert={()=>{if(ux.hover)ux.openGutter("insert",ux.hover);}}
       onMenu={()=>{if(ux.hover)ux.openGutter("menu",ux.hover);}}
       onDragStart={event=>{if(ux.hover)ux.onDragStart(event,ux.hover.pos);}}
-      onLeave={()=>ux.setHover(null)}/>
+      onDragEnd={ux.onDragEnd}
+      onLeave={()=>{if(!ux.dragging.current)ux.setHover(null);}}/>
     {ux.selectionAnchor && !popup && <SelectionToolbar editor={editor} anchor={ux.selectionAnchor}
       onLink={()=>openDetail("link")} onComment={()=>openDetail("comment")}/>}
     {popup && (popup.type==="menu" || popup.type==="insert" || popup.type==="slash") &&
