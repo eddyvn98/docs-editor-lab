@@ -9,7 +9,7 @@ export function Gutter({hover,onMenu,onInsert,onDragStart,onLeave}:{
     if(!hover) return;
     const refresh=()=>{
       const r=hover.element.getBoundingClientRect();
-      setPoint({left:r.left-56,top:r.top+Math.min(8,Math.max(0,r.height-30))});
+      setPoint({left:Math.max(4,r.left-56),top:r.top+Math.min(8,Math.max(0,r.height-30))});
     };
     refresh();window.addEventListener("scroll",refresh,true);window.addEventListener("resize",refresh);
     return()=>{window.removeEventListener("scroll",refresh,true);window.removeEventListener("resize",refresh);};
@@ -18,7 +18,7 @@ export function Gutter({hover,onMenu,onInsert,onDragStart,onLeave}:{
   return <div className="ux-gutter" data-ux-gutter style={point} onMouseLeave={onLeave}>
     {hover.empty && <button title="Add block" aria-label="Add block" onPointerDown={e=>e.preventDefault()} onClick={onInsert}>+</button>}
     <span role="button" tabIndex={0} draggable aria-label="Drag or open block actions" title="Drag to reorder · click for actions"
-      onDragStart={onDragStart} onPointerDown={e=>e.preventDefault()} onClick={onMenu}
+      onDragStart={onDragStart} onClick={onMenu}
       onKeyDown={e=>{if(e.key==="Enter" || e.key===" "){e.preventDefault();onMenu();}}}>⠿</span>
   </div>;
 }

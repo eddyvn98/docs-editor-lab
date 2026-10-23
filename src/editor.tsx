@@ -1,4 +1,6 @@
 import { Node, mergeAttributes } from "@tiptap/core";
+import {useState} from "react";
+import type {PointerEvent as ReactPointerEvent} from "react";
 import type { JSONContent } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
@@ -13,11 +15,44 @@ import Highlight from "@tiptap/extension-highlight";
 import {CommentMark} from "./CommentMark";
 import { TextStyleKit } from "@tiptap/extension-text-style";
 
-function ImageFigure({ node, selected }: NodeViewProps) {
-  const a = node.attrs as {src: string; alt?: string; width?: string; caption?: string};
-  return <NodeViewWrapper as="figure" className={"image-figure" + (selected ? " is-selected" : "")}>
-    <img src={a.src} alt={a.alt || "Document image"} style={{width:a.width || "100%"}} draggable={false}/>
-    <figcaption contentEditable={false}>{a.caption || "Click to add a caption"}</figcaption>
+function ImageFigure({node,selected,updateAttributes}:NodeViewProps){
+  const a=node.attrs as {src:string;alt?:string;width?:string;caption?:string};
+  const [preview,setPreview]=useState<number|null>(null);
+  const start=(event:ReactPointerEvent<HTMLButtonElement>)=>{
+    event.preventDefault();event.stopPropagation();
+    const figure=(event.currentTarget.closest(".image-figure") as HTMLElement|null);
+    const img=figure?.querySelector<HTMLImageElement>(".image-shell img");
+    const parent=figure?.getBoundingClientRect();
+    if(!img||!parent)return;
+    const initial=img.getBoundingClientRect().width, x=event.clientX;
+    let value=Math.round(100*initial/parent.width);
+    const move=(e:PointerEvent)=>{
+      value=Math.min(100,Math.max(25,Math.round(100*(initial+e.clientX-x)/parent.width)));
+      setPreview(value);
+    };
+    const done=()=>{
+      window.removeEventListener("pointermove",move);
+      window.removeEventListener("pointerup",done);
+      window.removeEventListener("pointercancel",cancel);
+      updateAttributes({width:value+"%"});setPreview(null);
+    };
+    const cancel=()=>{
+      window.removeEventListener("pointermove",move);
+      window.removeEventListener("pointerup",done);
+      window.removeEventListener("pointercancel",cancel);
+      setPreview(null);
+    };
+    window.addEventListener("pointermove",move);
+    window.addEventListener("pointerup",done);
+    window.addEventListener("pointercancel",cancel);
+  };
+  return <NodeViewWrapper as="figure" className={"image-figure"+(selected?" is-selected":"")}>
+    <div className="image-shell" style={{width:preview===null?a.width||"100%":preview+"%"}}>
+      <img src={a.src} alt={a.alt||"Document image"} draggable={false}/>
+      <button type="button" contentEditable={false} className="resize-image" aria-label="Resize image"
+        title="Drag to resize image" onPointerDown={start} onClick={e=>e.stopPropagation()}>↘</button>
+    </div>
+    <figcaption contentEditable={false}>{a.caption||"Click to add a caption"}</figcaption>
   </NodeViewWrapper>;
 }
 const DocumentImage = Image.extend({

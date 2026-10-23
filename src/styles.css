@@ -94,7 +94,7 @@ button {cursor:pointer}
 @media (max-width: 560px) {
   .topbar {height:54px}
   .tag,.save-state,.outline-toggle {display:none!important}
-  .page {padding:28px 22px 65px}
+  .page {padding:28px 18px 65px 48px}
   .document-title {margin-top:24px}
   .ProseMirror {font-size:15px}
   .ProseMirror td,.ProseMirror th {min-width:65px;padding:6px}

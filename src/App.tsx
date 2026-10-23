@@ -13,6 +13,8 @@ import {anchorComment,readComments,persistComments} from "./comments";
 import type {Comment} from "./comments";
 import "./comments.css";
 import "./color-tools.css";
+import "./image-files.css";
+import {insertImageFile} from "./imageFiles";
 import "./interactions.css";
 
 export default function App() {
@@ -28,6 +30,23 @@ export default function App() {
     },
   });
   const ux=useEditorUX(editor);
+  useEffect(()=>{
+    if(!editor)return;
+    const shortcut=(event:KeyboardEvent)=>{
+      if(!editor.isFocused || !(event.ctrlKey||event.metaKey))return;
+      const key=event.key.toLowerCase();
+      if(key!=="k" && !(key==="m" && event.shiftKey))return;
+      event.preventDefault();
+      const selection=editor.state.selection;
+      const rect=editor.view.coordsAtPos(selection.from);
+      const type=key==="k"?"link":"comment";
+      ux.setSelectionAnchor(null);
+      ux.setPopup({type,block:type,pos:selection.$from.depth?selection.$from.before(1):selection.from,
+        anchor:{element:null,point:{x:rect.left,y:rect.bottom+6},mode:"caret"},from:selection.from,to:selection.to});
+    };
+    document.addEventListener("keydown",shortcut);
+    return()=>document.removeEventListener("keydown",shortcut);
+  },[editor,ux.setPopup,ux.setSelectionAnchor]);
   const outline=useMemo(()=>{
     const entries:{text:string;pos:number;level:number}[]=[];
     editor?.state.doc.descendants((node,pos)=>{
@@ -74,7 +93,7 @@ export default function App() {
     } else {
       if(popup.type==="insert" || popup.type==="slash") insertBlock(editor,id,popup.pos);
       else {
-        if(popup.block==="cell" && popup.cellPos != null) editor.commands.setTextSelection(popup.cellPos);
+        if(popup.block==="cell" && popup.cellPos != null && !("$anchorCell" in editor.state.selection)) editor.commands.setTextSelection(popup.cellPos);
         applyBlockAction(editor,id,popup.pos,popup.cellPos);
       }
     }
@@ -97,8 +116,18 @@ export default function App() {
         <h1 className="document-title">Product planning notes</h1>
         <p className="document-hint">Select text, hover a block, or right-click an image or table cell. Your edits stay in this browser.</p>
         <div className="editor-frame" onMouseMove={ux.onMouseMove} onMouseLeave={event=>{if(!(event.relatedTarget instanceof Element && event.relatedTarget.closest("[data-ux-gutter]")))ux.setHover(null);}}
-          onContextMenu={ux.onContextMenu} onClick={ux.onClick} onDragOver={ux.onDragOver}
-          onDrop={ux.onDrop} onPointerUp={()=>requestAnimationFrame(ux.trackSelection)}>
+          onContextMenu={ux.onContextMenu} onClick={ux.onClick} onDragOver={event=>{
+            if(event.dataTransfer.types.includes("Files"))event.preventDefault();else ux.onDragOver(event);
+          }}
+          onDrop={event=>{
+            const file=Array.from(event.dataTransfer.files).find(f=>f.type.startsWith("image/"));
+            if(file){event.preventDefault();const pos=editor.view.posAtCoords({left:event.clientX,top:event.clientY})?.pos;
+              void insertImageFile(editor,file,pos).catch(error=>window.alert(String(error)));}
+            else ux.onDrop(event);
+          }} onPaste={event=>{
+            const file=Array.from(event.clipboardData.files).find(f=>f.type.startsWith("image/"));
+            if(file){event.preventDefault();void insertImageFile(editor,file).catch(error=>window.alert(String(error)));}
+          }} onPointerUp={()=>requestAnimationFrame(ux.trackSelection)}>
           <EditorContent editor={editor}/>
         </div>
         <footer className="page-footer">{words} words <span>·</span> Type / in an empty line to insert</footer>

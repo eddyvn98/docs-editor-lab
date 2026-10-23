@@ -98,7 +98,7 @@ export function useEditorUX(editor: Editor | null) {
     if(cell) {
       const p=editor.view.posAtCoords({left:point.x,top:point.y});
       cellPos=p?.pos;
-      if(typeof cellPos==="number") editor.commands.setTextSelection(cellPos);
+      if(typeof cellPos==="number" && !("$anchorCell" in editor.state.selection)) editor.commands.setTextSelection(cellPos);
     } else if(link) {
       const p=editor.view.posAtCoords({left:point.x,top:point.y});
       if(p) editor.commands.setTextSelection(p.pos);

@@ -4,6 +4,7 @@ import { Anchored } from "./Anchored";
 import { actionsFor, filterInserts } from "./logic";
 import type { Action, Item } from "./logic";
 import type { Anchor, Popup } from "./useEditorUX";
+import {imageToDataUrl} from "./imageFiles";
 
 function Button({label,run,active=false}: {label:string;run:()=>void;active?:boolean}) {
   return <button type="button" aria-label={label} title={label} className={active ? "active" : ""}
@@ -106,7 +107,10 @@ export function DetailPopover({editor,popup,onClose,onComment}:{
       placeholder="Leave a note on this block…"/></label>
     : <><label>{isImage ? "Image URL" : "Link URL"}<input autoFocus value={url} onChange={e=>setUrl(e.target.value)}
       onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();save();}}} placeholder="https://…"/></label>
-      {isImage && <><label>Caption<input value={caption} onChange={e=>setCaption(e.target.value)}
+      {isImage && <><label className="upload-label">Upload image
+        <input aria-label="Upload local image" type="file" accept="image/png,image/jpeg,image/webp,image/gif"
+          onChange={e=>{const file=e.target.files?.[0];if(file)void imageToDataUrl(file).then(setUrl).catch(err=>window.alert(String(err)));}}/>
+        </label><label>Caption<input value={caption} onChange={e=>setCaption(e.target.value)}
         placeholder="Describe the image"/></label>
         <label>Width · {width}%<input aria-label="Image width" type="range" min={25} max={100}
           value={width} onChange={e=>setWidth(Number(e.target.value))}/></label></>}

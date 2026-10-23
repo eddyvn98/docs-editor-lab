@@ -34,3 +34,7 @@ It is not affiliated with Lark or a pixel-perfect copy of proprietary assets.
 Run `npm ci && npm run build && npm test` on Node 22. For Chromium coverage, run `npm install --no-save --package-lock=false playwright@1.56.1`, then `npx playwright install chromium`, then `npm run test:browser`. GitHub Actions runs the build, unit, source-size and desktop/mobile browser checks.
 
 Document changes are saved locally as TipTap JSON. See [host adapters](docs/host-adapters.md) before connecting another application.
+
+### Local editor tools
+
+The Tools menu supports find/replace, HTML and TipTap JSON import/export, print/PDF through the browser, and manual local version checkpoints. Comments are anchored to text marks and stored locally. Images can be pasted/dropped from files (PNG/JPEG/WebP/GIF, maximum 1.5 MB), edited by URL or uploaded within the image popover, and resized by dragging. Cloud collaboration, server history, and actual PDF/DOCX import are intentionally outside the serverless sandbox.

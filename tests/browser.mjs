@@ -33,10 +33,37 @@ async function run(){
     await page.getByPlaceholder("Describe the image").fill("Updated caption");
     await page.getByRole("button",{name:"Save",exact:true}).click();
     assert.ok(await page.getByText("Updated caption").count());
+    await page.getByRole("button",{name:"Document tools"}).click();
+    await page.getByRole("textbox",{name:"Find text"}).fill("Reference");
+    await page.getByRole("button",{name:"Next match"}).click();
+    await page.getByRole("button",{name:"Save version"}).click();
+    await page.getByText("Version saved").waitFor();
+    await page.getByRole("button",{name:"Close tools"}).click();
+    await page.locator(".ProseMirror .image-figure img").click();
+    await page.locator('input[aria-label="Upload local image"]').setInputFiles({
+      name:"one-pixel.png",mimeType:"image/png",
+      buffer:Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jcW0AAAAASUVORK5CYII=","base64"),
+    });
+    await page.getByRole("button",{name:"Save",exact:true}).click();
+    assert.ok((await page.locator(".image-figure img").first().getAttribute("src"))?.startsWith("data:image/png;base64"));
+    const beforeWidth=await page.locator(".image-shell").first().evaluate(el=>el.style.width);
+    const handle=page.getByRole("button",{name:"Resize image"}).first();
+    const bound=await handle.boundingBox();
+    assert.ok(bound);
+    await page.mouse.move(bound.x+bound.width/2,bound.y+bound.height/2);
+    await page.mouse.down();
+    await page.mouse.move(bound.x-42,bound.y+bound.height/2,{steps:8});
+    await page.mouse.up();
+    const afterWidth=await page.locator(".image-shell").first().evaluate(el=>el.style.width);
+    assert.notEqual(beforeWidth,afterWidth,"drag handle resizes image");
     const rows=await page.locator(".ProseMirror table tr").count();
     await page.locator(".ProseMirror td").first().click({button:"right"});
     await page.getByRole("menuitem",{name:"Insert row below"}).click();
     assert.equal(await page.locator(".ProseMirror table tr").count(),rows+1);
+    await page.locator(".ProseMirror > p").last().hover();
+    await page.getByRole("button",{name:"Add block"}).click();
+    await page.getByRole("menuitem",{name:"Callout"}).waitFor();
+    await page.keyboard.press("Escape");
     await page.locator(".ProseMirror > p").last().click();
     await page.keyboard.type("/heading");
     await page.getByRole("menuitem",{name:"Heading 2"}).waitFor();
@@ -45,7 +72,16 @@ async function run(){
     await page.locator(".ProseMirror > p").first().click({clickCount:3});
     await page.locator(".selection-bar").waitFor();
     await page.getByRole("button",{name:"B",exact:true}).click();
+    await page.locator(".ProseMirror > p").first().click({clickCount:3});
+    await page.getByRole("button",{name:"Comment",exact:true}).click();
+    await page.getByPlaceholder("Leave a note on this block…").fill("Needs review");
+    await page.getByRole("button",{name:"Add comment"}).click();
+    assert.ok(await page.locator(".ProseMirror .comment-anchor").count()>0);
     assert.ok(await page.locator(".ProseMirror strong").count()>0);
+    await page.locator(".ProseMirror > p").first().click();
+    await page.keyboard.press("ControlOrMeta+k");
+    await page.getByText("Edit link",{exact:true}).waitFor();
+    await page.keyboard.press("Escape");
     await page.locator(".ProseMirror > p").first().click({button:"right"});
     await page.evaluate(()=>window.scrollTo(0,220));
     const anchored=await page.locator(".ux-menu").boundingBox();

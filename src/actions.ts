@@ -47,7 +47,8 @@ export function insertBlock(editor: Editor, id: Action, pos: number) {
 export function applyBlockAction(editor: Editor, id: Action, pos: number, cellPos?: number) {
   if(id === "duplicate") return duplicateBlock(editor,pos);
   if(id === "delete") return deleteBlock(editor,pos);
-  if(id === "table-delete") { if(cellPos != null) editor.commands.setTextSelection(cellPos); else focusBlock(editor,pos); return editor.chain().focus().deleteTable().run(); }
+  if(id === "table-delete") { if(cellPos != null && !("$anchorCell" in editor.state.selection)) editor.commands.setTextSelection(cellPos);
+  else if(cellPos == null) focusBlock(editor,pos); return editor.chain().focus().deleteTable().run(); }
   if(id === "insert-below") {
     const n=editor.state.doc.nodeAt(pos); if(!n) return false;
     const p=pos+n.nodeSize; return editor.chain().insertContentAt(p,{type:"paragraph"}).focus(p+1).run();

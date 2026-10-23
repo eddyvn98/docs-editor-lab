@@ -1,0 +1,9 @@
+.ProseMirror .image-figure .image-shell{position:relative;max-width:100%}
+.ProseMirror .image-figure .image-shell img{width:100%;display:block}
+.ProseMirror .image-figure .resize-image{position:absolute;bottom:7px;right:7px;
+  width:24px;height:24px;background:#fff;color:#3977cd;border:1px solid #c9daf4;
+  box-shadow:0 1px 7px #253b5b47;border-radius:5px;cursor:ew-resize;font-size:15px}
+.ProseMirror .image-figure:not(:hover) .resize-image{opacity:0}
+.ProseMirror .image-figure:hover .resize-image,.ProseMirror .image-figure .resize-image:focus-visible{opacity:1}
+.upload-label{display:flex;align-items:center;gap:8px;font-size:12px;color:#536a88}
+.upload-label input{min-width:0;max-width:100%;font-size:11px}
