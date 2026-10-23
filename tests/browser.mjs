@@ -101,7 +101,6 @@ async function run(){
     const sourceText=await source.textContent();
     await source.hover();
     await page.getByRole("button",{name:"Drag or open block actions"}).dragTo(page.locator(".ProseMirror > blockquote"));
-    console.log("DRAG TRACE",JSON.stringify(await page.evaluate(()=>window.__dragEvents)));
     assert.notEqual(await page.locator(".ProseMirror > p").first().textContent(),sourceText,"drag reordered a block");
     assert.deepEqual(errors,[]);
     await context.close();console.log("PASS Chromium width="+width);

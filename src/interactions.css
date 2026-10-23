@@ -47,3 +47,6 @@
   .ux-gutter button,.ux-gutter span {width:20px;font-size:18px}
   .selection-bar {flex-wrap:wrap;white-space:normal;max-width:calc(100vw - 16px)}
 }
+
+body.ux-reordering{cursor:grabbing!important;user-select:none}
+body.ux-reordering *{cursor:grabbing!important}

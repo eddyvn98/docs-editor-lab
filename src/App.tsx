@@ -173,8 +173,7 @@ export default function App() {
     </div>
     <Gutter hover={ux.hover} onInsert={()=>{if(ux.hover)ux.openGutter("insert",ux.hover);}}
       onMenu={()=>{if(ux.hover)ux.openGutter("menu",ux.hover);}}
-      onDragStart={event=>{if(ux.hover)ux.onDragStart(event,ux.hover.pos);}}
-      onDragEnd={ux.onDragEnd}
+      onPointerDown={ux.onGutterPointerDown}
       onLeave={()=>{if(!ux.dragging.current)ux.setHover(null);}}/>
     {ux.selectionAnchor && !popup && <SelectionToolbar editor={editor} anchor={ux.selectionAnchor}
       onLink={()=>openDetail("link")} onComment={()=>openDetail("comment")}/>}

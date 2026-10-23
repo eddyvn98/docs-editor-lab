@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { MouseEvent as ReactMouse, DragEvent as ReactDrag } from "react";
+import type { MouseEvent as ReactMouse, DragEvent as ReactDrag, PointerEvent as ReactPointer } from "react";
 import type { Editor } from "@tiptap/react";
 import { kindFor, slashQuery } from "./logic";
 import type { Kind, Point } from "./logic";
@@ -132,6 +132,43 @@ export function useEditorUX(editor: Editor | null) {
     setPopup({type,block:kindFor(node?.type.name || "paragraph"),pos:entry.pos,
       anchor:{element:entry.element,point:{x:r.left-30,y:r.top+12},offset:{x:-30,y:12},mode:"pointer"}});
   };
+  const onGutterPointerDown=(event:ReactPointer<HTMLElement>)=>{
+    if(!editor||event.button!==0||!hover)return;
+    event.preventDefault();
+    setPopup(null);
+    const source=hover.pos,startX=event.clientX,startY=event.clientY;
+    dragging.current=true;
+    let moved=false;
+    const clear=()=>{
+      window.removeEventListener("pointermove",move);
+      window.removeEventListener("pointerup",end);
+      window.removeEventListener("pointercancel",cancel);
+      document.body.classList.remove("ux-reordering");
+      dragging.current=false;
+    };
+    const move=(e:PointerEvent)=>{
+      if(Math.hypot(e.clientX-startX,e.clientY-startY)>7){
+        moved=true;document.body.classList.add("ux-reordering");
+      }
+    };
+    const end=(e:PointerEvent)=>{
+      clear();
+      if(!moved)return;
+      const target=document.elementFromPoint(e.clientX,e.clientY);
+      const found=topBlock(editor,target);
+      if(found&&found.pos!==source){
+        const node=editor.state.doc.nodeAt(found.pos);
+        const rect=found.element.getBoundingClientRect();
+        const after=e.clientY>rect.top+rect.height/2;
+        moveBlock(editor,source,found.pos+(after?(node?.nodeSize||0):0));
+      }
+      setHover(null);
+    };
+    const cancel=()=>{clear();setHover(null);};
+    window.addEventListener("pointermove",move);
+    window.addEventListener("pointerup",end);
+    window.addEventListener("pointercancel",cancel);
+  };
   const onDragStart = (event: ReactDrag<HTMLElement>, source: number) => {
     dragging.current=true;
     event.dataTransfer.setData("application/x-doc-block",String(source));
@@ -153,5 +190,5 @@ export function useEditorUX(editor: Editor | null) {
     if(event.dataTransfer.types.includes("application/x-doc-block")) event.preventDefault();
   };
   return {hover,setHover,dragging,popup,setPopup,selectionAnchor,setSelectionAnchor,close,
-    onMouseMove,onContextMenu,onClick,openGutter,onDragStart,onDragEnd,onDrop,onDragOver,trackSelection};
+    onMouseMove,onContextMenu,onClick,openGutter,onGutterPointerDown,onDragStart,onDragEnd,onDrop,onDragOver,trackSelection};
 }
