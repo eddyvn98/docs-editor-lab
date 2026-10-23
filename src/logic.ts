@@ -1,18 +1,18 @@
 export type Kind = 'text' | 'paragraph' | 'heading' | 'bulletList' | 'orderedList' | 'taskList' |
-  'blockquote' | 'callout' | 'codeBlock' | 'horizontalRule' | 'image' | 'table' | 'cell' | 'link' | 'columns' | 'taskItem' | 'toggleBlock' | 'pageBreak';
+  'blockquote' | 'callout' | 'codeBlock' | 'horizontalRule' | 'image' | 'table' | 'cell' | 'link' | 'columns' | 'taskItem' | 'toggleBlock' | 'pageBreak' | 'inlineSheet' | 'docsToc' | 'docsTimeline' | 'docsMermaid';
 export type Action = 'paragraph' | 'h1' | 'h2' | 'h3' | 'bullet' | 'numbered' | 'task' | 'quote' | 'callout' |
   'code' | 'divider' | 'image' | 'table' | 'columns' | 'duplicate' | 'delete' | 'insert-below' | 'comment' | 'copy' |
   'align-left' | 'align-center' | 'align-right' | 'indent' | 'outdent' | 'link-edit' | 'link-copy' | 'link-remove' |
   'link-open' | 'image-edit' | 'image-download' | 'image-copy' | 'row-add' | 'row-delete' | 'col-add' | 'col-delete' |
   'table-delete' | 'merge-cells' | 'split-cell' | 'header-row' | 'header-column' | 'header-cell' | 'row-before' |
-  'col-before' | 'toggle-task' | 'block-link' | 'move-up' | 'move-down' | 'templates' | 'template-save' | 'block-style' | 'image-crop' | 'toggle' | 'page-break' | 'image-preview';
+  'col-before' | 'toggle-task' | 'block-link' | 'move-up' | 'move-down' | 'templates' | 'template-save' | 'block-style' | 'image-crop' | 'toggle' | 'page-break' | 'image-preview' | 'sheets' | 'toc' | 'timeline' | 'mermaid' | 'template-meeting' | 'template-plan' | 'template-weekly' | 'template-swot' | 'template-implementation' | 'templates-gallery';
 export type Item = { id: Action; label: string; shortcut?: string; destructive?: boolean };
 const I = (id: Action, label: string): Item => ({ id, label, destructive: ['delete', 'table-delete', 'row-delete', 'col-delete'].includes(id) });
 export const insertItems: Item[] = [
   I('paragraph', 'Text'), I('h1', 'Heading 1'), I('h2', 'Heading 2'), I('h3', 'Heading 3'),
   I('bullet', 'Bullet list'), I('numbered', 'Numbered list'), I('task', 'Checklist'), I('quote', 'Quote'),
   I('callout', 'Callout'), I('code', 'Code block'), I('divider', 'Divider'), I('image', 'Image'),
-  I('table', 'Table'), I('columns', '2 columns'), I('toggle', 'Toggle details'), I('page-break', 'Page break'), I('templates', 'Templates'),
+  I('table', 'Table'), I('columns', '2 columns'), I('toggle', 'Toggle details'), I('page-break', 'Page break'), I('sheets','Sheets'), I('toc','Table of Contents'), I('timeline','Timeline'), I('mermaid','Mermaid'), I('templates', 'Block templates'), I('template-meeting','Meeting Notes'), I('template-plan','Project Plan'), I('template-weekly','Weekly Report'), I('template-swot','SWOT Mind Map'), I('template-implementation','Project Planning and Implementation'), I('templates-gallery','Mẫu khác / Template gallery'),
 ];
 const template = I('template-save', 'Save to My Templates');
 const shared = [I('insert-below', 'Insert below'), I('duplicate', 'Duplicate'), I('copy', 'Copy content'), template,
@@ -33,6 +33,7 @@ export function actionsFor(kind: Kind): Item[] {
     case 'image': return [I('image-preview', 'Preview and crop image'), I('image-edit', 'Caption, replace or resize'), I('image-crop', 'Crop image'), I('image-copy', 'Copy image URL'),
       I('image-download', 'Download image'), I('duplicate', 'Duplicate'), template, I('block-link', 'Copy link to block'),
       I('insert-below', 'Insert below'), I('delete', 'Delete image')];
+    case 'inlineSheet': case 'docsToc': case 'docsTimeline': case 'docsMermaid': return [I('insert-below','Insert below'),I('duplicate','Duplicate'),template,I('block-link','Copy link to block'),I('comment','Comment'),I('delete','Delete block')];
     case 'horizontalRule': return [I('insert-below', 'Insert below'), I('duplicate', 'Duplicate'), I('delete', 'Delete divider')];
     case 'columns': return [I('insert-below', 'Insert below'), I('duplicate', 'Duplicate'), template, I('block-link', 'Copy link to block'), I('delete', 'Delete columns')];
     case 'codeBlock': return [I('paragraph', 'Turn into text'), I('copy', 'Copy code'), template, I('duplicate', 'Duplicate'), I('insert-below', 'Insert below'), I('delete', 'Delete block')];
@@ -43,13 +44,17 @@ export function actionsFor(kind: Kind): Item[] {
   }
 }
 export const kindFor = (name: string): Kind => (['paragraph', 'heading', 'bulletList', 'orderedList', 'taskList',
-  'blockquote', 'callout', 'codeBlock', 'horizontalRule', 'image', 'table', 'columns', 'taskItem', 'toggleBlock', 'pageBreak'].includes(name) ? name : 'text') as Kind;
+  'blockquote', 'callout', 'codeBlock', 'horizontalRule', 'image', 'table', 'columns', 'taskItem', 'toggleBlock', 'pageBreak', 'inlineSheet', 'docsToc', 'docsTimeline', 'docsMermaid'].includes(name) ? name : 'text') as Kind;
 /** Legacy empty-line query helper; caret-aware matching lives in slashMatch.ts. */
 export function slashQuery(text: string): string | null {
   const match = /^\s*\/([\p{L}\p{N} _-]{0,40})$/u.exec(text);
   return match ? match[1].trim().toLowerCase() : null;
 }
-export const filterInserts = (query: string) => insertItems.filter(item => item.label.toLowerCase().includes(query.toLowerCase()));
+export const filterInserts = (query: string) => {
+  const term=query.toLocaleLowerCase().trim();
+  if(term==='mẫu'||term==='template')return insertItems.filter(item=>item.id.startsWith('template-')||item.id==='templates-gallery');
+  return insertItems.filter(item=>item.label.toLocaleLowerCase().includes(term));
+};
 export type Point = { x: number; y: number };
 export type Size = { width: number; height: number };
 export function placeOverlay(p: Point, s: Size, v: Size, gap = 8): Point {

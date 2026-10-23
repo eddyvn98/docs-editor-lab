@@ -5,6 +5,7 @@ import { insertItems } from './logic';
 import { blockDescriptions } from './blockCatalog';
 import { insertNewBlock } from './insertNewBlock';
 import { ModalSurface } from './ModalSurface';
+import { insertDocumentShortcut } from './documentShortcuts';
 import { requestDocs } from './docsEvents';
 import { positionById } from './BlockIdentity';
 export function InsertPalette({ editor, onClose, afterPos }: { editor: Editor; onClose: () => void; afterPos?: number }) {
@@ -29,6 +30,8 @@ export function InsertPalette({ editor, onClose, afterPos }: { editor: Editor; o
     try { editor.view.dispatch(editor.state.tr.setSelection(bookmark.current.resolve(editor.state.doc))); }
     catch { setError('The original insertion point was removed. Close and choose a new position.'); return; }
     if (target.current === -1) { setError('The target block was deleted. Choose a new insertion point.'); return; }
+    if(id==='templates-gallery'){onClose();window.dispatchEvent(new Event('docs-open-template-gallery'));return;}
+    if(id.startsWith('template-')){if(insertDocumentShortcut(editor,id,target.current)){onClose();return;}setError('Template insertion failed.');return;}
     if (id === 'templates') { onClose(); requestDocs(editor, { action: 'templates', pos: target.current }); return; }
     if (insertNewBlock(editor, id, rows, columns, target.current)) { onClose(); requestAnimationFrame(() => editor.view.focus()); }
     else setError('This block could not be inserted here. Your content was not replaced.');

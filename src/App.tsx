@@ -39,6 +39,7 @@ import './interactions.css';
 import './completion.css';
 import './workspace-polish.css';
 import './features/features.css';
+import './docs-blocks.css';
 
 export default function App() {
   const [initial] = useState(readLocalDocument);
@@ -85,6 +86,11 @@ export default function App() {
   const { view, patchView } = useViewPreferences(editor), readOnly = view.mode === 'read';
   const ux = useEditorUX(readOnly ? null : editor);
   useEditorShortcuts(readOnly ? null : editor, ux.setPopup);
+  useEffect(() => {
+    const open=()=>{ux.close(false);setTemplates(true);};
+    window.addEventListener('docs-open-template-gallery',open);
+    return ()=>window.removeEventListener('docs-open-template-gallery',open);
+  },[ux.close]);
   useEffect(() => () => window.clearTimeout(hoverTimer.current), []);
   useEffect(() => {
     ux.close(false); setInsert(false); setTemplates(false); setImagePosition(null);

@@ -112,6 +112,10 @@ export function insertBlock(editor: Editor, id: Action, pos: number, slash = fal
       const text = slash ? "" : previous.textBetween(0, previous.content.size, "\n", "\n");
       content = { type: "codeBlock", content: text ? [{ type: "text", text }] : undefined }; break;
     }
+    case "sheets": content = {type:"inlineSheet"}; break;
+    case "toc": content = {type:"docsToc"}; break;
+    case "timeline": content = {type:"docsTimeline"}; break;
+    case "mermaid": content = {type:"docsMermaid"}; break;
     case "divider": content = { type: "horizontalRule" }; break;
     case "page-break": content = { type: "pageBreak" }; break;
     case "image": content = { type: "image", attrs: { src: "/editor-sample.svg", alt: "Sample document illustration", width: "80%", caption: "Replace with your image" } }; break;
@@ -121,13 +125,13 @@ export function insertBlock(editor: Editor, id: Action, pos: number, slash = fal
   }
   try {
     // Inserting a non-text block must not silently discard existing content.
-    const keepPrevious = !slash && ["divider", "page-break", "image", "table", "columns"].includes(id)
+    const keepPrevious = !slash && ["divider", "page-break", "image", "table", "columns", "sheets", "toc", "timeline", "mermaid"].includes(id)
       && (previous.content.size > 0 || previous.isAtom);
     const from = keepPrevious ? pos + previous.nodeSize : pos;
     const to = keepPrevious ? from : pos + previous.nodeSize;
     const block = editor.schema.nodeFromJSON({ ...content, attrs: { ...content.attrs, blockId: keepPrevious ? null : previous.attrs.blockId } });
     block.check();
-    const trailing = ["image", "table", "columns", "horizontalRule", "pageBreak"].includes(block.type.name);
+    const trailing = ["image", "table", "columns", "horizontalRule", "pageBreak", "inlineSheet", "docsToc", "docsTimeline", "docsMermaid"].includes(block.type.name);
     const tr = editor.state.tr.replaceWith(from, to, trailing ? [block, editor.schema.nodes.paragraph.create()] : block);
     tr.doc.check(); editor.view.dispatch(tr.scrollIntoView());
     return focusBlock(editor, trailing ? from + block.nodeSize : from);
@@ -150,7 +154,7 @@ export function applyBlockAction(editor: Editor, id: Action, pos: number, cellPo
     const content = node.type.name === "taskItem" ? { type: "taskItem", attrs: { checked: false }, content: [{ type: "paragraph" }] } : { type: "paragraph" };
     return editor.chain().insertContentAt(after, content).focus(after + (node.type.name === "taskItem" ? 2 : 1)).run();
   }
-  if (["paragraph", "h1", "h2", "h3", "bullet", "numbered", "task", "quote", "callout", "code", "divider", "image", "table", "columns", "toggle", "page-break"].includes(id)) return insertBlock(editor, id, pos);
+  if (["paragraph", "h1", "h2", "h3", "bullet", "numbered", "task", "quote", "callout", "code", "divider", "image", "table", "columns", "toggle", "page-break", "sheets", "toc", "timeline", "mermaid"].includes(id)) return insertBlock(editor, id, pos);
   // Preserve CellSelection; collapsing it here makes merge impossible.
   if (cellPos !== undefined) {
     if (!("$anchorCell" in editor.state.selection)) editor.commands.setTextSelection(cellPos);

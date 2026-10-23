@@ -1,5 +1,6 @@
 import type { Editor } from "@tiptap/react";
 import type { JSONContent } from "@tiptap/core";
+import { closeHistory } from "@tiptap/pm/history";
 import { Selection } from "@tiptap/pm/state";
 
 export function insertFeatureBlocks(editor: Editor, content: JSONContent[], append = false): boolean {
@@ -13,7 +14,7 @@ export function insertFeatureBlocks(editor: Editor, content: JSONContent[], appe
   const from = append ? doc.content.size : empty ? top : top + (current?.nodeSize || 0);
   const to = empty ? top + current!.nodeSize : from;
   const trailing = blocks[blocks.length - 1].isAtom ? [editor.schema.nodes.paragraph.create()] : [];
-  const tr = editor.state.tr.replaceWith(from, to, [...blocks, ...trailing]);
+  const tr = closeHistory(editor.state.tr).replaceWith(from, to, [...blocks, ...trailing]);
   tr.doc.check();
   tr.setSelection(Selection.near(tr.doc.resolve(Math.min(from + 1, tr.doc.content.size))));
   editor.view.dispatch(tr.scrollIntoView()); editor.view.focus(); return true;

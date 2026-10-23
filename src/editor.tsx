@@ -18,6 +18,8 @@ import { DocumentAppearance } from './DocumentAppearance';
 import { BlockAppearance } from './BlockAppearance';
 import { CalloutBlock } from './CalloutBlock';
 import { CodeBlockTools } from './CodeBlockTools';
+import { InlineSheet } from './InlineSheet';
+import { DocsToc, DocsTimeline, DocsMermaid } from './DocsVisualBlocks';
 import { ToggleBlock, PageBreak } from './features/AdvancedBlocks';
 import { starterContent } from './sampleContent';
 import { validateDocument } from './contentIO';
@@ -33,7 +35,7 @@ export const extensions = [
   TableKit.configure({ table: { resizable: true } }), TaskList, TaskItem.configure({ nested: true }),
   TextAlign.configure({ types: ['paragraph', 'heading'] }), Highlight.configure({ multicolor: true }),
   TextStyleKit, CommentMark, Column, Columns, BlockIdentity, SearchHighlights, HeadingFolding,
-  DocumentAppearance, BlockAppearance, CodeBlockTools, ToggleBlock, PageBreak,
+  DocumentAppearance, BlockAppearance, CodeBlockTools, ToggleBlock, PageBreak, InlineSheet, DocsToc, DocsTimeline, DocsMermaid,
 ];
 export function readLocalDocument(): string | JSONContent {
   startupIssue = '';

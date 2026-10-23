@@ -11,6 +11,10 @@ export function blankBlock(id: string, rows = 3, columns = 3): InsertDraft | nul
     content: [{ type: id === 'task' ? 'taskItem' : 'listItem', attrs: id === 'task' ? { checked: false } : undefined, content: [paragraph()] }] };
   if (id === 'quote' || id === 'callout') return { type: id === 'quote' ? 'blockquote' : 'callout', content: [paragraph()] };
   if (id === 'toggle') return { type: 'toggleBlock', attrs: { title: 'Details', open: true }, content: [paragraph()] };
+  if (id === 'sheets') return {type:'inlineSheet'};
+  if (id === 'toc') return {type:'docsToc'};
+  if (id === 'timeline') return {type:'docsTimeline'};
+  if (id === 'mermaid') return {type:'docsMermaid'};
   if (id === 'page-break') return { type: 'pageBreak' };
   if (id === 'code') return { type: 'codeBlock' };
   if (id === 'divider') return { type: 'horizontalRule' };
@@ -28,5 +32,6 @@ export const blockDescriptions: Record<string, string> = {
   bullet: 'An unordered list', numbered: 'An ordered list', task: 'A checklist with checkboxes', quote: 'A quotation with an accent border',
   callout: 'Highlight a note or warning', code: 'A monospaced code block', divider: 'A horizontal separator',
   image: 'Insert an image placeholder, then replace or upload', table: 'A grid with a header row', columns: 'Two editable columns, stacked on narrow screens',
+  sheets: 'Editable spreadsheet: 3 columns × 2 rows', toc: 'Live document headings', timeline: 'Editable event timeline', mermaid: 'Editable diagram source with readable fallback',
   toggle: 'Collapsible details with an editable title', 'page-break': 'Start a new page when printing',
 };

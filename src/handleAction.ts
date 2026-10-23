@@ -6,12 +6,21 @@ import { applyBlockAction, insertBlock } from './actions';
 import { applySlash } from './applySlash';
 import { copyText, downloadImage } from './clipboard';
 import { safeLink } from './safety';
+import { insertDocumentShortcut } from './documentShortcuts';
 import { requestDocs } from './docsEvents';
 
 export async function executeAction(editor: Editor, popup: Popup, id: Action): Promise<void> {
   if (!editor.isEditable) throw new Error('Switch to Editing to use document actions.');
   if (!editor.state.doc.nodeAt(popup.pos)) throw new Error('This block no longer exists.');
   if (!restoreTarget(editor, popup, false)) throw new Error('The original selection was removed.');
+  if(id === 'templates-gallery'){
+    if(popup.type==='slash'&&!applySlash(editor,popup,'templates')) throw new Error('Slash command changed.');
+    window.dispatchEvent(new Event('docs-open-template-gallery'));return;
+  }
+  if(id.startsWith('template-')){
+    if(!insertDocumentShortcut(editor,id,popup.pos,popup.type==='slash'?popup:undefined)) throw new Error('Cannot insert this template here.');
+    return;
+  }
   if (id === 'templates') {
     if (popup.type === 'slash' && !applySlash(editor, popup, 'templates')) throw new Error('The slash command changed. Type it again.');
     requestDocs(editor, { action: 'templates' }); return;

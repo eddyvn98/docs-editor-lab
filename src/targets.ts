@@ -43,7 +43,7 @@ export function blockFromDOM(editor: Editor, target: EventTarget | null, nested 
   const root = editor.view.dom;
   let el = target instanceof Element ? target : null;
   if (!el || !root.contains(el)) return null;
-  if (nested) el = el.closest('[data-node-view-wrapper],.image-figure,.document-code-block,.toggle-block,.document-page-break,table,pre,blockquote,aside,p,h1,h2,h3,li,hr') || el;
+  if (nested) el = el.closest('[data-node-view-wrapper],.image-figure,.document-code-block,.toggle-block,.document-page-break,.inline-sheet,.docs-visual,table,pre,blockquote,aside,p,h1,h2,h3,li,hr') || el;
   else while (el && el.parentElement !== root) el = el.parentElement;
   if (!(el instanceof HTMLElement) || el === root) return null;
   try {

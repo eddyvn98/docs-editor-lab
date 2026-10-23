@@ -22,7 +22,7 @@ test("random normalized crops stay in bounds", () => {
 });
 test("template ids are unique", () => assert.equal(new Set(DOCUMENT_TEMPLATES.map(t => t.id)).size, DOCUMENT_TEMPLATES.length));
 test("template search ignores case", () => assert.deepEqual(searchTemplates("MEETING").map(t => t.id), ["meeting"]));
-test("template category filters independently", () => assert.equal(searchTemplates("", "Planning").length, 2));
+test("template category filters independently", () => assert.equal(searchTemplates("", "Planning").length, 5));
 test("empty template results are explicit", () => assert.deepEqual(searchTemplates("nothing-like-this"), []));
 test("templates never reuse block identities or thread marks", () => {
   for (const template of DOCUMENT_TEMPLATES) {

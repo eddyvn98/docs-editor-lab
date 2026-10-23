@@ -10,8 +10,8 @@ const table = (rows: string[][]): JSONContent => ({ type: "table", content: rows
   type: "tableRow", content: cells.map(value => ({ type: index ? "tableCell" : "tableHeader", content: [paragraph(value)] })),
 })) });
 export const DOCUMENT_TEMPLATES: DocumentTemplate[] = [
-  { id: "meeting", name: "Meeting notes", category: "Meetings", description: "Agenda, decisions and clearly owned follow-up actions.", content: [
-    heading("Meeting notes"), paragraph("Date: ____   Participants: ____"), callout("Purpose: what decision or outcome do we need?"),
+  { id: "meeting", name: "Meeting Notes", category: "Meetings", description: "Agenda, decisions and clearly owned follow-up actions.", content: [
+    heading("Meeting Notes"), paragraph("Date: ____   Participants: ____"), callout("Purpose: what decision or outcome do we need?"),
     heading("Agenda", 3), bullets(["Topic and expected outcome", "Questions to resolve"]),
     heading("Decisions", 3), paragraph("Record the decision, reasoning and any constraints."),
     heading("Action items", 3), table([["Action", "Owner", "Due date"], ["Next action", "Name", "Date"]]),
@@ -34,11 +34,24 @@ export const DOCUMENT_TEMPLATES: DocumentTemplate[] = [
     heading("Follow-up", 3), tasks(["Validate the assumptions", "Share the decision with affected people"]),
   ] },
   { id: "weekly", name: "Weekly update", category: "Updates", description: "A readable status update with next steps and blockers.", content: [
-    heading("Weekly update"), paragraph("Week of: ____   Owner: ____"),
+    heading("Weekly Report"), paragraph("Week of: ____   Owner: ____"),
     heading("Summary", 3), callout("Overall status and the most important change this week."),
     heading("Completed", 3), bullets(["Outcome delivered", "Evidence or reference"]),
     heading("Next week", 3), tasks(["Priority one", "Priority two"]),
     heading("Needs attention", 3), table([["Blocker", "Impact", "Help needed"], ["Issue", "Impact", "Decision or owner"]]),
+  ] },
+  { id: "plan", name: "Project Plan", category: "Planning", description: "Plan outcomes, activities and responsibilities.", content: [
+    heading("Project Plan"), callout("Objective: define a measurable outcome."), heading("Workstreams",3),
+    table([["Workstream","Owner","Due"],["Discovery","",""],["Delivery","",""]]),
+    heading("Milestones",3), tasks(["Confirm scope","Review risks","Ship the result"])
+  ] },
+  { id: "swot", name: "SWOT Mind Map", category: "Planning", description: "Strengths, weaknesses, opportunities and threats.", content: [
+    heading("SWOT Mind Map"), table([["Strengths","Weaknesses"],["What works?","Where are the gaps?"],["Opportunities","Threats"],["What can improve?","What could block progress?"]])
+  ] },
+  { id: "implementation", name: "Project Planning and Implementation", category: "Planning", description: "Delivery plan, milestones and review checkpoints.", content: [
+    heading("Project Planning and Implementation"), heading("Objectives",3),paragraph("Describe the intended outcome."),
+    heading("Implementation schedule",3),table([["Phase","Action","Owner"],["Plan","",""],["Implement","",""],["Verify","",""]]),
+    heading("Review",3),tasks(["Check milestones","Record lessons learned"])
   ] },
   { id: "checklist", name: "Review checklist", category: "Meetings", description: "A reusable checklist with a place for review notes.", content: [
     heading("Review checklist"), tasks(["Confirm the goal and scope", "Check the evidence", "Review edge cases", "Record the decision"]),
