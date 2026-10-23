@@ -87,10 +87,21 @@ async function run(){
     await page.evaluate(()=>window.scrollTo(0,220));
     const anchored=await page.locator(".ux-menu").boundingBox();
     assert.ok(anchored && Number.isFinite(anchored.y));
+    await page.evaluate(()=>{
+      window.__dragEvents=[];
+      for(const type of ["dragstart","dragover","drop","dragend"]){
+        document.addEventListener(type,e=>{
+          if(window.__dragEvents.length>=32)return;
+          window.__dragEvents.push(type+":"+(e.target instanceof Element ? e.target.tagName : "?")+
+            ":"+(e.dataTransfer?.types ? Array.from(e.dataTransfer.types).join(",") : "none"));
+        },true);
+      }
+    });
     const source=page.locator(".ProseMirror > p").first();
     const sourceText=await source.textContent();
     await source.hover();
     await page.getByRole("button",{name:"Drag or open block actions"}).dragTo(page.locator(".ProseMirror > blockquote"));
+    console.log("DRAG TRACE",JSON.stringify(await page.evaluate(()=>window.__dragEvents)));
     assert.notEqual(await page.locator(".ProseMirror > p").first().textContent(),sourceText,"drag reordered a block");
     assert.deepEqual(errors,[]);
     await context.close();console.log("PASS Chromium width="+width);
