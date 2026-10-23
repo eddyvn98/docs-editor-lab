@@ -94,12 +94,10 @@ async function run(){
     const grip=page.getByRole("button",{name:"Drag or open block actions"});
     const from=await grip.boundingBox(),to=await destination.boundingBox();
     assert.ok(from&&to&&to.y>=0&&to.y<860,"grip and target are visible");
-    console.log("DRAG GEOMETRY",width,JSON.stringify({from,to}));
     await page.mouse.move(from.x+from.width/2,from.y+from.height/2);
     await page.mouse.down();
     await page.mouse.move(to.x+18,to.y+to.height*0.25,{steps:16});
     await page.mouse.up();
-    console.log("DRAG RESULT",width,await source.evaluate(el=>el.previousElementSibling?.tagName));
     assert.equal(await source.evaluate(el=>el.previousElementSibling?.tagName),"H1","drag moved heading above duplicate paragraphs");
     assert.deepEqual(errors,[]);
     await context.close();console.log("PASS Chromium width="+width);

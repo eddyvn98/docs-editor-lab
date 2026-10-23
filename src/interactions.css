@@ -50,3 +50,5 @@
 
 body.ux-reordering{cursor:grabbing!important;user-select:none}
 body.ux-reordering *{cursor:grabbing!important}
+
+.ux-gutter span{touch-action:none}

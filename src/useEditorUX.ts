@@ -169,11 +169,6 @@ export function useEditorUX(editor: Editor | null) {
     window.addEventListener("pointerup",end);
     window.addEventListener("pointercancel",cancel);
   };
-  const onDragStart = (event: ReactDrag<HTMLElement>, source: number) => {
-    dragging.current=true;
-    event.dataTransfer.setData("application/x-doc-block",String(source));
-    event.dataTransfer.effectAllowed="move";
-  };
   const onDrop = (event: ReactDrag<HTMLDivElement>) => {
     dragging.current=false;
     if(!editor) return;
@@ -185,10 +180,9 @@ export function useEditorUX(editor: Editor | null) {
     if(found && Number.isInteger(source)) moveBlock(editor,source,found.pos);
     setHover(null);setPopup(null);
   };
-  const onDragEnd=()=>{dragging.current=false;setHover(null);};
   const onDragOver = (event: ReactDrag<HTMLDivElement>) => {
     if(event.dataTransfer.types.includes("application/x-doc-block")) event.preventDefault();
   };
   return {hover,setHover,dragging,popup,setPopup,selectionAnchor,setSelectionAnchor,close,
-    onMouseMove,onContextMenu,onClick,openGutter,onGutterPointerDown,onDragStart,onDragEnd,onDrop,onDragOver,trackSelection};
+    onMouseMove,onContextMenu,onClick,openGutter,onGutterPointerDown,onDrop,onDragOver,trackSelection};
 }
