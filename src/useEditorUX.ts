@@ -1,188 +1,156 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { MouseEvent as ReactMouse, DragEvent as ReactDrag, PointerEvent as ReactPointer } from "react";
+import type { MouseEvent as ReactMouse } from "react";
 import type { Editor } from "@tiptap/react";
+import { getMarkRange } from "@tiptap/core";
+import { TextSelection } from "@tiptap/pm/state";
+import type { Transaction } from "@tiptap/pm/state";
 import { kindFor, slashQuery } from "./logic";
-import type { Kind, Point } from "./logic";
-import { moveBlock } from "./actions";
+import { blockFromDOM, captureTarget, remapTarget, restoreTarget } from "./targets";
+import type { Anchor, Hover, Popup } from "./targets";
+import { useBlockDrag } from "./useBlockDrag";
+import { focusBlock } from "./actions";
+export type { Anchor, Hover, Popup } from "./targets";
 
-export type Anchor = { element: HTMLElement | null; point: Point; offset?: Point; mode?: "caret"|"selection"|"element"|"pointer" };
-export type Popup = { type: "menu"|"insert"|"slash"|"link"|"image"|"comment"; block: Kind; pos: number; anchor: Anchor; query?: string; cellPos?: number; from?: number; to?: number };
-export type Hover = { pos: number; element: HTMLElement; empty: boolean };
-function topBlock(editor: Editor, target: EventTarget | null): Hover | null {
-  let el = target instanceof HTMLElement ? target : null;
-  const root = editor.view.dom;
-  while (el && el.parentElement !== root) el = el.parentElement;
-  if (!el || el.parentElement !== root) return null;
-  let pos: number;
-  try {
-    const mapped = editor.view.posAtDOM(el,0);
-    const resolved = editor.state.doc.resolve(mapped);
-    pos = resolved.depth > 0 ? resolved.before(1) : mapped;
-  } catch { return null; }
-  const node = editor.state.doc.nodeAt(pos);
-  if (!node) return null;
-  return { pos, element:el, empty:node.type.name === "paragraph" && !node.textContent.trim() };
-}
-function pointerAnchor(el: HTMLElement, point: Point): Anchor {
-  const r = el.getBoundingClientRect();
-  return {element:el,point,offset:{x:point.x-r.left,y:point.y-r.top},mode:"pointer"};
-}
-function caretAnchor(editor: Editor): Anchor {
-  const r = editor.view.coordsAtPos(editor.state.selection.from);
-  return {element:null,point:{x:r.left,y:r.bottom + 6},mode:"caret"};
-}
 export function useEditorUX(editor: Editor | null) {
-  const [hover,setHover] = useState<Hover|null>(null);
-  const dragging=useRef(false);
-  const [popup,setPopup] = useState<Popup|null>(null);
-  const [selectionAnchor,setSelectionAnchor] = useState<Anchor|null>(null);
-  const close = useCallback(() => setPopup(null),[]);
+  const [hover, setHover] = useState<Hover | null>(null);
+  const [popup, setPopupState] = useState<Popup | null>(null);
+  const current = useRef<Popup | null>(null);
+  const dismissed = useRef<string | null>(null);
+  const [selectionAnchor, setSelectionAnchor] = useState<Anchor | null>(null);
+  const drag = useBlockDrag(editor, hover, () => setHover(null));
+  const commit = useCallback((value: Popup | null) => { current.current = value; setPopupState(value); }, []);
+  const setPopup = useCallback((value: Popup | null) => {
+    commit(value && editor ? captureTarget(editor, value) : value);
+  }, [editor, commit]);
+  const close = useCallback((restore = false) => {
+    const value = current.current;
+    if (value?.type === "slash") dismissed.current = `${value.pos}:${value.query || ""}`;
+    commit(null); setSelectionAnchor(null);
+    if (restore && value && editor) restoreTarget(editor, value);
+  }, [editor, commit]);
   const trackSelection = useCallback(() => {
-    if(!editor || editor.state.selection.empty || !editor.isFocused) {setSelectionAnchor(null);return;}
-    const selection = window.getSelection();
-    if(!selection || selection.isCollapsed || !editor.view.dom.contains(selection.anchorNode)) {setSelectionAnchor(null);return;}
-    const rect = selection.getRangeAt(0).getBoundingClientRect();
-    if(rect.width || rect.height) setSelectionAnchor({element:null,point:{x:rect.left,y:rect.top},mode:"selection"});
-  },[editor]);
+    if (!editor || editor.isDestroyed) return;
+    const selection = editor.state.selection;
+    if (!(selection instanceof TextSelection) || selection.empty || !editor.isFocused) { setSelectionAnchor(null); return; }
+    const start = editor.view.coordsAtPos(selection.from);
+    setSelectionAnchor({ element: null, point: { x: start.left, y: start.top }, mode: "selection", from: selection.from, to: selection.to });
+  }, [editor]);
   useEffect(() => {
-    if(!editor) return;
-    const onUpdate = () => {
-      const {selection,doc} = editor.state;
-      if(popup && popup.type !== "slash" && !doc.nodeAt(popup.pos)) setPopup(null);
-      if(selection.empty && selection.$from.parent.type.name === "paragraph") {
-        const q = slashQuery(selection.$from.parent.textContent);
-        if(q !== null && selection.$from.parentOffset === selection.$from.parent.content.size) {
+    if (!editor) return;
+    const slash = () => {
+      if (editor.view.composing || !editor.isFocused) return;
+      const { selection } = editor.state;
+      if (current.current && !["slash"].includes(current.current.type)) return;
+      if (selection.empty && selection.$from.parent.type.name === "paragraph") {
+        const query = slashQuery(selection.$from.parent.textContent);
+        if (query !== null && selection.$from.parentOffset === selection.$from.parent.content.size) {
           const pos = selection.$from.before(selection.$from.depth);
-          setPopup({type:"slash",block:"paragraph",pos,anchor:caretAnchor(editor),query:q});
-          setSelectionAnchor(null);
-          return;
+          if (dismissed.current === `${pos}:${query}`) return;
+          const rect = editor.view.coordsAtPos(selection.from);
+          setPopup({ type: "slash", block: "paragraph", pos, query,
+            anchor: { element: null, point: { x: rect.left, y: rect.bottom + 8 }, mode: "caret", from: selection.from } });
+          setSelectionAnchor(null); return;
         }
       }
-      setPopup(p => p?.type === "slash" ? null : p);
-      trackSelection();
+      dismissed.current = null;
+      if (current.current?.type === "slash") commit(null);
     };
-    editor.on("update",onUpdate);
-    editor.on("selectionUpdate",trackSelection);
-    const onPointer = (event: PointerEvent) => {
-      const t = event.target;
-      if(t instanceof Element && (t.closest("[data-ux-overlay]") || t.closest("[data-ux-gutter]"))) return;
-      setPopup(null);
-      if(!(t instanceof Node && editor.view.dom.contains(t))) setSelectionAnchor(null);
-    };
-    const onKey = (event: KeyboardEvent) => {
-      if(event.key === "Escape") {setPopup(null);setSelectionAnchor(null);}
-    };
-    document.addEventListener("pointerdown",onPointer,true);
-    document.addEventListener("keydown",onKey);
-    return () => {
-      editor.off("update",onUpdate);editor.off("selectionUpdate",trackSelection);
-      document.removeEventListener("pointerdown",onPointer,true);
-      document.removeEventListener("keydown",onKey);
-    };
-  },[editor,trackSelection,popup]);
-  const onMouseMove = (event: ReactMouse<HTMLDivElement>) => {
-    if(!editor || dragging.current) return;
-    const found = topBlock(editor,event.target);
-    if(found && (found.pos !== hover?.pos || found.element !== hover.element)) setHover(found);
-  };
-  const onContextMenu = (event: ReactMouse<HTMLDivElement>) => {
-    if(!editor || !editor.view.dom.contains(event.target as Node)) return;
-    const found = topBlock(editor,event.target);
-    if(!found) return;
-    event.preventDefault();
-    const target = event.target as HTMLElement;
-    const cell = target.closest<HTMLElement>("td,th");
-    const link = target.closest<HTMLElement>("a[href]");
-    const node = editor.state.doc.nodeAt(found.pos);
-    const point = {x:event.clientX,y:event.clientY};
-    let cellPos: number | undefined;
-    if(cell) {
-      const p=editor.view.posAtCoords({left:point.x,top:point.y});
-      cellPos=p?.pos;
-      if(typeof cellPos==="number" && !("$anchorCell" in editor.state.selection)) editor.commands.setTextSelection(cellPos);
-    } else if(link) {
-      const p=editor.view.posAtCoords({left:point.x,top:point.y});
-      if(p) editor.commands.setTextSelection(p.pos);
-    }
-    setSelectionAnchor(null);
-    setPopup({type:"menu",block:cell ? "cell" : link ? "link" : kindFor(node?.type.name || ""),pos:found.pos,
-      cellPos,anchor:pointerAnchor(found.element,point)});
-  };
-  const onClick = (event: ReactMouse<HTMLDivElement>) => {
-    if(!editor) return;
-    const target=event.target as HTMLElement;
-    const found=topBlock(editor,target);
-    if(!found) return;
-    const img=target.closest<HTMLElement>(".image-figure");
-    const link=target.closest<HTMLAnchorElement>("a[href]");
-    if(img) {
-      editor.commands.setNodeSelection(found.pos);
-      setPopup({type:"image",block:"image",pos:found.pos,anchor:{element:img,point:{x:0,y:0},mode:"element"}});
-    } else if(link) {
-      event.preventDefault();
-      const point=editor.view.posAtCoords({left:event.clientX,top:event.clientY});
-      if(point) editor.commands.setTextSelection(point.pos);
-      setPopup({type:"link",block:"link",pos:found.pos,anchor:{element:link,point:{x:0,y:0},mode:"element"},
-        from:editor.state.selection.from,to:editor.state.selection.to});
-    }
-  };
-  const openGutter = (type: "menu"|"insert", entry: Hover) => {
-    const r=entry.element.getBoundingClientRect();
-    const node=editor?.state.doc.nodeAt(entry.pos);
-    setPopup({type,block:kindFor(node?.type.name || "paragraph"),pos:entry.pos,
-      anchor:{element:entry.element,point:{x:r.left-30,y:r.top+12},offset:{x:-30,y:12},mode:"pointer"}});
-  };
-  const onGutterPointerDown=(event:ReactPointer<HTMLElement>)=>{
-    if(!editor||event.button!==0||!hover)return;
-    event.preventDefault();
-    setPopup(null);
-    const source=hover.pos,startX=event.clientX,startY=event.clientY;
-    dragging.current=true;
-    let moved=false;
-    const clear=()=>{
-      window.removeEventListener("pointermove",move);
-      window.removeEventListener("pointerup",end);
-      window.removeEventListener("pointercancel",cancel);
-      document.body.classList.remove("ux-reordering");
-      dragging.current=false;
-    };
-    const move=(e:PointerEvent)=>{
-      if(Math.hypot(e.clientX-startX,e.clientY-startY)>7){
-        moved=true;document.body.classList.add("ux-reordering");
-      }
-    };
-    const end=(e:PointerEvent)=>{
-      clear();
-      if(!moved)return;
-      const target=document.elementFromPoint(e.clientX,e.clientY);
-      const found=topBlock(editor,target);
-      if(found&&found.pos!==source){
-        const node=editor.state.doc.nodeAt(found.pos);
-        const rect=found.element.getBoundingClientRect();
-        const after=e.clientY>rect.top+rect.height/2;
-        moveBlock(editor,source,found.pos+(after?(node?.nodeSize||0):0));
-      }
+    const transaction = ({ transaction: tr }: { transaction: Transaction }) => {
+      if (!tr.docChanged) return;
+      const active = current.current;
+      if (active && active.type !== "slash") commit(remapTarget(editor, active, tr));
       setHover(null);
     };
-    const cancel=()=>{clear();setHover(null);};
-    window.addEventListener("pointermove",move);
-    window.addEventListener("pointerup",end);
-    window.addEventListener("pointercancel",cancel);
+    const selection = () => { trackSelection(); slash(); };
+    const outside = (event: PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest("[data-ux-overlay],[data-ux-gutter]")) return;
+      close(false);
+    };
+    const key = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.isComposing) return;
+      if (event.key === "Escape" && (current.current || !editor.state.selection.empty)) { event.preventDefault(); close(true); }
+      if (event.shiftKey && event.key === "F10" && editor.isFocused) {
+        event.preventDefault();
+        const s = editor.state.selection;
+        const pos = s.$from.depth ? s.$from.before(1) : s.from;
+        const rect = editor.view.coordsAtPos(s.from);
+        setPopup({ type: "menu", block: kindFor(editor.state.doc.nodeAt(pos)?.type.name || ""), pos,
+          anchor: { element: null, point: { x: rect.left, y: rect.bottom }, mode: "caret", from: s.from } });
+      }
+    };
+    editor.on("transaction", transaction); editor.on("update", slash); editor.on("selectionUpdate", selection);
+    document.addEventListener("pointerdown", outside, true); document.addEventListener("keydown", key);
+    return () => {
+      editor.off("transaction", transaction); editor.off("update", slash); editor.off("selectionUpdate", selection);
+      document.removeEventListener("pointerdown", outside, true); document.removeEventListener("keydown", key);
+    };
+  }, [editor, commit, setPopup, close, trackSelection]);
+  const selectLink = (element: Element) => {
+    if (!editor) return;
+    const pos = editor.view.posAtDOM(element, 0);
+    const range = getMarkRange(editor.state.doc.resolve(pos), editor.schema.marks.link);
+    if (range) editor.commands.setTextSelection(range);
   };
-  const onDrop = (event: ReactDrag<HTMLDivElement>) => {
-    dragging.current=false;
-    if(!editor) return;
-    const raw=event.dataTransfer.getData("application/x-doc-block");
-    if(!raw) return;
+  const onMouseMove = (event: ReactMouse<HTMLDivElement>) => {
+    if (!editor || drag.dragging.current || current.current) return;
+    const found = blockFromDOM(editor, event.target);
+    if (found && found.pos !== hover?.pos) setHover(found);
+  };
+  const onContextMenu = (event: ReactMouse<HTMLDivElement>) => {
+    if (!editor || !editor.view.dom.contains(event.target as Node)) return;
+    const target = event.target as HTMLElement;
+    const cell = target.closest<HTMLElement>("td,th");
+    const link = target.closest("a[href]");
+    const candidate = cell?.closest("table") || target.closest(".image-figure") || (!link && target.closest('li[data-type="taskItem"]')) || target;
+    const found = blockFromDOM(editor, candidate, true);
+    if (!found) return;
     event.preventDefault();
-    const source=Number(raw);
-    const found=topBlock(editor,event.target);
-    if(found && Number.isInteger(source)) moveBlock(editor,source,found.pos);
-    setHover(null);setPopup(null);
+    let cellPos: number | undefined;
+    if (cell) {
+      cellPos = editor.view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos;
+      if (cellPos !== undefined && !cell.classList.contains("selectedCell")) editor.commands.setTextSelection(cellPos);
+    } else if (link) selectLink(link);
+    else {
+      const hit = editor.view.posAtCoords({ left: event.clientX, top: event.clientY });
+      const selected = editor.state.selection;
+      if (hit && (selected.empty || hit.pos < selected.from || hit.pos > selected.to)) {
+        if (editor.state.doc.nodeAt(found.pos)?.isAtom) editor.commands.setNodeSelection(found.pos);
+        else editor.commands.setTextSelection(hit.pos);
+      }
+    }
+    const rect = found.element.getBoundingClientRect();
+    setSelectionAnchor(null);
+    setPopup({ type: "menu", block: cell ? "cell" : link ? "link" : kindFor(editor.state.doc.nodeAt(found.pos)?.type.name || ""),
+      pos: found.pos, cellPos, anchor: { element: found.element, point: { x: event.clientX, y: event.clientY },
+        offset: { x: event.clientX - rect.left, y: event.clientY - rect.top }, mode: "pointer" } });
   };
-  const onDragOver = (event: ReactDrag<HTMLDivElement>) => {
-    if(event.dataTransfer.types.includes("application/x-doc-block")) event.preventDefault();
+  const onClick = (event: ReactMouse<HTMLDivElement>) => {
+    if (!editor) return;
+    const target = event.target as HTMLElement;
+    if (target.closest(".resize-image")) return;
+    const image = target.closest<HTMLElement>(".image-figure"), link = target.closest<HTMLElement>("a[href]");
+    const found = blockFromDOM(editor, image || link || target, true);
+    if (!found) return;
+    if (image && editor.state.doc.nodeAt(found.pos)?.type.name === "image") {
+      editor.commands.setNodeSelection(found.pos);
+      setPopup({ type: "image", block: "image", pos: found.pos, anchor: { element: image, point: { x: 0, y: 0 }, mode: "element" } });
+    } else if (link) {
+      event.preventDefault(); selectLink(link);
+      setPopup({ type: "link", block: "link", pos: found.pos, anchor: { element: link, point: { x: 0, y: 0 }, mode: "element" } });
+    } else setHover(blockFromDOM(editor, target));
   };
-  return {hover,setHover,dragging,popup,setPopup,selectionAnchor,setSelectionAnchor,close,
-    onMouseMove,onContextMenu,onClick,openGutter,onGutterPointerDown,onDrop,onDragOver,trackSelection};
+  const openGutter = (type: "menu" | "insert", entry: Hover) => {
+    if (!editor) return;
+    if (drag.suppressClick.current) { drag.suppressClick.current = false; return; }
+    const node = editor.state.doc.nodeAt(entry.pos);
+    const selection = editor.state.selection;
+    if (node && (type === "insert" || selection.from < entry.pos || selection.to > entry.pos + node.nodeSize)) focusBlock(editor, entry.pos);
+    const r = entry.element.getBoundingClientRect();
+    setPopup({ type, block: kindFor(editor.state.doc.nodeAt(entry.pos)?.type.name || "paragraph"), pos: entry.pos,
+      anchor: { element: entry.element, point: { x: r.left - 25, y: r.top }, offset: { x: -25, y: 0 }, mode: "pointer" } });
+  };
+  return { hover, setHover, popup, setPopup, selectionAnchor, setSelectionAnchor, close, dragging: drag.dragging,
+    indicator: drag.indicator, onGutterPointerDown: drag.onPointerDown, onMouseMove, onContextMenu, onClick,
+    openGutter, trackSelection };
 }

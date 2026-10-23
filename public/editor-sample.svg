@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="400" viewBox="0 0 960 400" role="img" aria-label="Sample document layout">
+<rect width="960" height="400" fill="#eaf0fa"/><rect x="80" y="45" width="800" height="310" rx="14" fill="white"/>
+<rect x="130" y="95" width="300" height="18" rx="9" fill="#6e87bb"/><rect x="130" y="135" width="650" height="8" rx="4" fill="#cbd7ed"/>
+<rect x="130" y="165" width="530" height="8" rx="4" fill="#cbd7ed"/><rect x="130" y="210" width="300" height="100" rx="10" fill="#edf4fd"/>
+<rect x="460" y="210" width="320" height="100" rx="10" fill="#eef6f0"/>
+</svg>

@@ -1,82 +1,149 @@
 import type { Editor } from "@tiptap/react";
+import type { JSONContent } from "@tiptap/core";
+import { NodeSelection, Selection } from "@tiptap/pm/state";
+import type { Node as PMNode } from "@tiptap/pm/model";
 import type { Action } from "./logic";
 
-export function deleteBlock(editor: Editor, pos: number) {
-  const n = editor.state.doc.nodeAt(pos); if (!n) return false;
-  const tr = editor.state.tr;
-  if (editor.state.doc.childCount === 1) tr.replaceWith(0,n.nodeSize,editor.schema.nodes.paragraph.create());
-  else tr.delete(pos,pos+n.nodeSize);
-  editor.view.dispatch(tr.scrollIntoView()); editor.commands.focus(); return true;
+export function focusBlock(editor: Editor, pos: number) {
+  const node = editor.state.doc.nodeAt(pos); if (!node) return false;
+  let caret: number | null = node.isTextblock ? pos + 1 : null;
+  if (caret === null) node.descendants((child, offset) => {
+    if (caret === null && child.isTextblock) caret = pos + offset + 2;
+  });
+  const selection = caret !== null ? Selection.near(editor.state.doc.resolve(caret)) : NodeSelection.create(editor.state.doc, pos);
+  editor.view.dispatch(editor.state.tr.setSelection(selection)); editor.view.focus(); return true;
+}
+export function deleteBlock(editor: Editor, pos: number): boolean {
+  const node = editor.state.doc.nodeAt(pos); if (!node) return false;
+  const resolved = editor.state.doc.resolve(pos), parent = resolved.parent;
+  if (parent.childCount === 1 && ["bulletList", "orderedList", "taskList"].includes(parent.type.name)) {
+    return deleteBlock(editor, resolved.before(resolved.depth));
+  }
+  try {
+    const tr = editor.state.tr;
+    if (parent.childCount === 1) tr.replaceWith(pos, pos + node.nodeSize, editor.schema.nodes.paragraph.create());
+    else tr.delete(pos, pos + node.nodeSize);
+    editor.view.dispatch(tr.scrollIntoView()); editor.view.focus(); return true;
+  } catch { return false; }
+}
+function freshCopy(node: JSONContent): JSONContent {
+  const attrs = node.attrs ? { ...node.attrs, blockId: null } : undefined;
+  return { ...node, attrs, marks: node.marks?.filter(mark => mark.type !== "comment"), content: node.content?.map(freshCopy) };
 }
 export function duplicateBlock(editor: Editor, pos: number) {
-  const n = editor.state.doc.nodeAt(pos); if(!n) return false;
-  editor.view.dispatch(editor.state.tr.insert(pos+n.nodeSize,n.copy(n.content)).scrollIntoView()); return true;
+  const node = editor.state.doc.nodeAt(pos); if (!node) return false;
+  const copy = editor.schema.nodeFromJSON(freshCopy(node.toJSON() as JSONContent));
+  editor.view.dispatch(editor.state.tr.insert(pos + node.nodeSize, copy).scrollIntoView());
+  return true;
 }
 export function moveBlock(editor: Editor, from: number, to: number) {
-  const n = editor.state.doc.nodeAt(from);
-  if (!n || from === to || (to > from && to < from+n.nodeSize)) return false;
-  const tr = editor.state.tr.delete(from,from+n.nodeSize);
-  const destination = tr.mapping.map(to);
-  if (destination === from) return false;
-  editor.view.dispatch(tr.insert(destination,n).scrollIntoView()); return true;
+  const doc = editor.state.doc;
+  if (from < 0 || to < 0 || from > doc.content.size || to > doc.content.size) return false;
+  const node = doc.nodeAt(from);
+  if (!node || from === to || (to > from && to <= from + node.nodeSize)) return false;
+  if (doc.resolve(from).parent !== doc.resolve(to).parent) return false;
+  try {
+    const tr = editor.state.tr.delete(from, from + node.nodeSize);
+    const destination = tr.mapping.map(to, -1);
+    tr.insert(destination, node); tr.doc.check();
+    tr.setSelection(Selection.near(tr.doc.resolve(Math.min(destination + 1, tr.doc.content.size))));
+    editor.view.dispatch(tr.scrollIntoView()); return true;
+  } catch { return false; }
 }
-export function focusBlock(editor: Editor, pos: number) {
-  const n = editor.state.doc.nodeAt(pos); if(!n) return false;
-  const where = Math.min(editor.state.doc.content.size,pos+(n.isTextblock ? 1 : 2));
-  editor.commands.setTextSelection(where); editor.commands.focus(); return true;
+export function moveSibling(editor: Editor, pos: number, direction: -1 | 1) {
+  const node = editor.state.doc.nodeAt(pos); if (!node) return false;
+  const resolved = editor.state.doc.resolve(pos), parent = resolved.parent, index = resolved.index();
+  if (direction < 0 && index > 0) return moveBlock(editor, pos, pos - parent.child(index - 1).nodeSize);
+  if (direction > 0 && index + 1 < parent.childCount) return moveBlock(editor, pos, pos + node.nodeSize + parent.child(index + 1).nodeSize);
+  return false;
 }
-export function insertBlock(editor: Editor, id: Action, pos: number) {
-  focusBlock(editor,pos); const c = editor.chain().focus();
-  switch(id) {
-    case "paragraph": return c.setParagraph().run();
-    case "h1": return c.setHeading({level:1}).run();
-    case "h2": return c.setHeading({level:2}).run();
-    case "h3": return c.setHeading({level:3}).run();
-    case "bullet": return c.toggleBulletList().run();
-    case "numbered": return c.toggleOrderedList().run();
-    case "task": return c.toggleTaskList().run();
-    case "quote": return c.toggleBlockquote().run();
-    case "code": return c.toggleCodeBlock().run();
-    case "callout": return c.insertContent({type:"callout",content:[{type:"paragraph",content:[{type:"text",text:"Write a callout…"}]}]}).run();
-    case "divider": return c.setHorizontalRule().run();
-    case "image": return c.insertContent({type:"image",attrs:{src:"https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=1100&q=85",alt:"Sample landscape",width:"80%",caption:"Edit caption"}}).run();
-    case "table": return c.insertTable({rows:3,cols:3,withHeaderRow:true}).run();
-    case "columns": return c.insertContent({type:"columns",content:[
-      {type:"column",content:[{type:"paragraph"}]},
-      {type:"column",content:[{type:"paragraph"}]},
-    ]}).run();
+function textParagraphs(node: PMNode, empty: boolean): JSONContent[] | null {
+  if (empty) return [{ type: "paragraph" }];
+  const paragraphs: JSONContent[] = [];
+  let unsafe = false;
+  if (node.isTextblock) paragraphs.push({ type: "paragraph", content: node.content.toJSON() as JSONContent[] });
+  else node.descendants(child => {
+    if (child.isTextblock) { paragraphs.push({ type: "paragraph", content: child.content.toJSON() as JSONContent[] }); return false; }
+    if (child.isLeaf && !child.isText) unsafe = true;
+    return true;
+  });
+  return unsafe ? null : paragraphs.length ? paragraphs : [{ type: "paragraph" }];
+}
+export function insertBlock(editor: Editor, id: Action, pos: number, slash = false) {
+  const previous = editor.state.doc.nodeAt(pos); if (!previous) return false;
+  const paragraphs = textParagraphs(previous, slash);
+  const textTypes = ["paragraph", "h1", "h2", "h3", "bullet", "numbered", "task", "quote", "callout", "code"];
+  if (textTypes.includes(id) && !paragraphs) return false;
+  const parts = paragraphs || [{ type: "paragraph" }];
+  const inline = parts.flatMap((p, i) => [...(i ? [{ type: "hardBreak" }] : []), ...(p.content || [])]);
+  let content: JSONContent;
+  switch (id) {
+    case "paragraph": content = { type: "paragraph", content: inline }; break;
+    case "h1": case "h2": case "h3": content = { type: "heading", attrs: { level: Number(id[1]) }, content: inline }; break;
+    case "bullet": case "numbered": case "task":
+      content = { type: id === "task" ? "taskList" : id === "bullet" ? "bulletList" : "orderedList",
+        content: parts.map(p => ({ type: id === "task" ? "taskItem" : "listItem", attrs: id === "task" ? { checked: false } : undefined, content: [p] })) }; break;
+    case "quote": case "callout": content = { type: id === "quote" ? "blockquote" : "callout", content: parts }; break;
+    case "code": {
+      const text = slash ? "" : previous.textBetween(0, previous.content.size, "\n", "\n");
+      content = { type: "codeBlock", content: text ? [{ type: "text", text }] : undefined }; break;
+    }
+    case "divider": content = { type: "horizontalRule" }; break;
+    case "image": content = { type: "image", attrs: { src: "/editor-sample.svg", alt: "Sample document illustration", width: "80%", caption: "Replace with your image" } }; break;
+    case "table": content = { type: "table", content: Array.from({ length: 3 }, (_, row) => ({ type: "tableRow", content: Array.from({ length: 3 }, () => ({ type: row === 0 ? "tableHeader" : "tableCell", content: [{ type: "paragraph" }] })) })) }; break;
+    case "columns": content = { type: "columns", content: [0, 1].map(() => ({ type: "column", content: [{ type: "paragraph" }] })) }; break;
     default: return false;
   }
+  try {
+    const block = editor.schema.nodeFromJSON({ ...content, attrs: { ...content.attrs, blockId: previous.attrs.blockId } });
+    block.check();
+    const trailing = ["image", "table", "columns", "horizontalRule"].includes(block.type.name);
+    const tr = editor.state.tr.replaceWith(pos, pos + previous.nodeSize,
+      trailing ? [block, editor.schema.nodes.paragraph.create()] : block);
+    editor.view.dispatch(tr.scrollIntoView());
+    return focusBlock(editor, trailing ? pos + block.nodeSize : pos);
+  } catch { return false; }
 }
 export function applyBlockAction(editor: Editor, id: Action, pos: number, cellPos?: number) {
-  if(id === "duplicate") return duplicateBlock(editor,pos);
-  if(id === "delete") return deleteBlock(editor,pos);
-  if(id === "table-delete") { if(cellPos != null && !("$anchorCell" in editor.state.selection)) editor.commands.setTextSelection(cellPos);
-  else if(cellPos == null) focusBlock(editor,pos); return editor.chain().focus().deleteTable().run(); }
-  if(id === "insert-below") {
-    const n=editor.state.doc.nodeAt(pos); if(!n) return false;
-    const p=pos+n.nodeSize; return editor.chain().insertContentAt(p,{type:"paragraph"}).focus(p+1).run();
+  if (id === "toggle-task") {
+    const node = editor.state.doc.nodeAt(pos);
+    if (node?.type.name !== "taskItem") return false;
+    editor.view.dispatch(editor.state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, checked: !node.attrs.checked }));
+    return true;
   }
-  if(["paragraph","h1","h2","h3","bullet","numbered","task","quote","callout","code","divider","image","table","columns"].includes(id)) return insertBlock(editor,id,pos);
-  if(cellPos != null) editor.commands.setTextSelection(cellPos); else focusBlock(editor,pos);
-  const c=editor.chain().focus();
-  switch(id) {
-    case "align-left": return c.setTextAlign("left").run();
-    case "align-center": return c.setTextAlign("center").run();
-    case "align-right": return c.setTextAlign("right").run();
-    case "indent": return c.sinkListItem("listItem").run();
-    case "outdent": return c.liftListItem("listItem").run();
-    case "row-add": return c.addRowAfter().run();
-    case "row-before": return c.addRowBefore().run();
-    case "col-before": return c.addColumnBefore().run();
-    case "merge-cells": return c.mergeCells().run();
-    case "split-cell": return c.splitCell().run();
-    case "header-row": return c.toggleHeaderRow().run();
-    case "header-column": return c.toggleHeaderColumn().run();
-    case "header-cell": return c.toggleHeaderCell().run();
-    case "row-delete": return c.deleteRow().run();
-    case "col-add": return c.addColumnAfter().run();
-    case "col-delete": return c.deleteColumn().run();
+  if (id === "duplicate") return duplicateBlock(editor, pos);
+  if (id === "delete") return deleteBlock(editor, pos);
+  if (id === "move-up" || id === "move-down") return moveSibling(editor, pos, id === "move-up" ? -1 : 1);
+  if (id === "insert-below") {
+    const node = editor.state.doc.nodeAt(pos); if (!node) return false;
+    const after = pos + node.nodeSize;
+    const content = node.type.name === "taskItem" ? { type: "taskItem", attrs: { checked: false }, content: [{ type: "paragraph" }] } : { type: "paragraph" };
+    return editor.chain().insertContentAt(after, content).focus(after + (node.type.name === "taskItem" ? 2 : 1)).run();
+  }
+  if (["paragraph", "h1", "h2", "h3", "bullet", "numbered", "task", "quote", "callout", "code", "divider", "image", "table", "columns"].includes(id)) return insertBlock(editor, id, pos);
+  // Preserve CellSelection; collapsing it here makes merge impossible.
+  if (cellPos !== undefined) {
+    if (!("$anchorCell" in editor.state.selection)) editor.commands.setTextSelection(cellPos);
+  } else focusBlock(editor, pos);
+  const chain = editor.chain().focus();
+  switch (id) {
+    case "align-left": return chain.setTextAlign("left").run();
+    case "align-center": return chain.setTextAlign("center").run();
+    case "align-right": return chain.setTextAlign("right").run();
+    case "indent": return chain.sinkListItem(editor.isActive("taskItem") ? "taskItem" : "listItem").run();
+    case "outdent": return chain.liftListItem(editor.isActive("taskItem") ? "taskItem" : "listItem").run();
+    case "row-add": return chain.addRowAfter().run();
+    case "row-before": return chain.addRowBefore().run();
+    case "row-delete": return chain.deleteRow().run();
+    case "col-add": return chain.addColumnAfter().run();
+    case "col-before": return chain.addColumnBefore().run();
+    case "col-delete": return chain.deleteColumn().run();
+    case "merge-cells": return chain.mergeCells().run();
+    case "split-cell": return chain.splitCell().run();
+    case "header-row": return chain.toggleHeaderRow().run();
+    case "header-column": return chain.toggleHeaderColumn().run();
+    case "header-cell": return chain.toggleHeaderCell().run();
+    case "table-delete": return chain.deleteTable().run();
     default: return false;
   }
 }

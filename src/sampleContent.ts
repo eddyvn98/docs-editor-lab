@@ -1,0 +1,15 @@
+export const starterContent = [
+  '<h1>Product planning notes</h1>',
+  '<p>Select this sentence to explore the contextual text toolbar. Right-click a block for relevant actions.</p>',
+  '<h2>What matters today?</h2>',
+  '<p>Keep editing close to the content. <a href="https://www.larksuite.com/hc/en-US/articles/608015471697-use-blocks-in-docs">Read about blocks</a></p>',
+  '<ul data-type="taskList"><li data-type="taskItem" data-checked="true"><p>Review interactions</p></li><li data-type="taskItem" data-checked="false"><p>Try right-click and dragging</p></li></ul>',
+  '<aside data-type="callout"><p>Tip: hover beside a block. On an empty line, press + or type / to insert.</p></aside>',
+  '<h2>Reference moodboard</h2><p>Images have their own caption and size controls.</p>',
+  '<img src="/editor-sample.svg" alt="Sample document layout" data-caption="Local illustration - no remote image request" data-width="85%">',
+  '<blockquote><p>Great editing feels like working on the page, not managing the app.</p></blockquote>',
+  '<pre><code>const editing = { focused: true, friction: "low" };</code></pre>',
+  '<table><tbody><tr><th><p>Interaction</p></th><th><p>Target</p></th><th><p>Status</p></th></tr><tr><td><p>Selection toolbar</p></td><td><p>Text</p></td><td><p>Try it</p></td></tr><tr><td><p>Context actions</p></td><td><p>Cell / block</p></td><td><p>Try it</p></td></tr></tbody></table>',
+  '<div data-type="columns"><div data-type="column"><p>Explore ideas side by side</p></div><div data-type="column"><p>Compare without another table</p></div></div>',
+  '<hr><h2>Quick thoughts</h2><p></p>',
+].join("");

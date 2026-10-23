@@ -1,0 +1,29 @@
+.title-input{display:block;width:100%;padding:0;border:0;background:transparent;outline:none;color:inherit;font-family:inherit}
+.title-input:focus{box-shadow:0 2px 0 #93b4f0}
+.document-notice{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 24px;background:#fff5dc;color:#594c2b;font-size:13px}
+.document-notice span{flex:1;min-width:180px}
+.document-notice button{border:1px solid #d9c58d;border-radius:5px;padding:6px 10px;background:white;color:inherit}
+.selection-controls{display:flex;align-items:center;flex-wrap:wrap;gap:2px;max-width:min(600px,calc(100vw - 28px))}
+.detail-panel form{display:flex;flex-direction:column;gap:12px}
+.detail-panel a{font-size:12px;overflow-wrap:anywhere;color:#2767b9}
+.ux-error{margin:0;color:#a72d3b;font-size:12px}
+.ux-menu input{width:100%;padding:8px;border:1px solid #dce3ed;border-radius:5px;margin-bottom:6px}
+.ux-menu button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,[role=button]:focus-visible,a:focus-visible{outline:2px solid #4b83d6;outline-offset:2px}
+.comments input:not([type=checkbox]){width:100%;min-width:0;border:1px solid #dce3ed;border-radius:5px;padding:7px;font-size:12px}
+.comments form{display:flex;gap:4px;margin:8px 0}
+.comments label,.comments small{display:block;font-size:11px;color:#77808d;margin-top:7px}
+.comments .comment-reply{border-left:2px solid #c9d9ef;padding-left:9px;margin-left:6px}
+.block-drop-indicator{position:fixed;height:3px;background:#3479d8;z-index:90;pointer-events:none;border-radius:2px}
+.ProseMirror .search-match{background:#fff0b2}
+.ProseMirror .search-current{background:#ffd37b;outline:1px solid #c3962c}
+.ProseMirror .image-shell img{max-height:none;object-fit:contain}
+.ProseMirror .resize-image{touch-action:none}
+.ProseMirror .tableWrapper{overflow-x:auto;max-width:100%}
+.ProseMirror .selectedCell::after{position:absolute;inset:0;pointer-events:none;background:#6f9ed333;content:""}
+.ProseMirror td,.ProseMirror th{position:relative}
+.ProseMirror .column-resize-handle{position:absolute;right:-2px;top:0;bottom:-2px;width:4px;background:#7b9fd9;pointer-events:none}
+.ProseMirror.resize-cursor{cursor:col-resize}
+@media(max-width:560px){.top-actions{gap:2px}.top-actions button{padding:6px}.breadcrumbs .crumb,.breadcrumbs .tag{display:none}.breadcrumbs{max-width:38%}.document-notice{padding:10px}.page-footer{flex-wrap:wrap}.selection-bar button{min-height:36px}.detail-panel input,.detail-panel textarea{font-size:16px!important}.ux-gutter span{touch-action:none}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important}}
+@media print{.document-notice,.block-drop-indicator,.resize-image{display:none!important}.title-input{box-shadow:none}}
