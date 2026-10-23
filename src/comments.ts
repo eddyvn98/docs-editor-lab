@@ -26,7 +26,11 @@ export function anchorComment(editor:Editor,target:CommentTarget,id:string):stri
   }
   if(from<to&&to<=editor.state.doc.content.size){
     const excerpt=editor.state.doc.textBetween(from,to," ").slice(0,80);
-    editor.chain().focus().setTextSelection({from,to}).setMark("comment",{commentId:id}).run();
+    const mark=editor.schema.marks.comment;
+    if(mark){
+      editor.view.dispatch(editor.state.tr.addMark(from,to,mark.create({commentId:id})).scrollIntoView());
+      editor.commands.focus();
+    }
     return excerpt;
   }
   return node?.textContent.slice(0,80)||"Block";
