@@ -38,3 +38,5 @@ Document changes are saved locally as TipTap JSON. See [host adapters](docs/host
 ### Local editor tools
 
 The Tools menu supports find/replace, HTML and TipTap JSON import/export, print/PDF through the browser, and manual local version checkpoints. Comments are anchored to text marks and stored locally. Images can be pasted/dropped from files (PNG/JPEG/WebP/GIF, maximum 1.5 MB), edited by URL or uploaded within the image popover, and resized by dragging. Cloud collaboration, server history, and actual PDF/DOCX import are intentionally outside the serverless sandbox.
+
+The independent schema also includes a responsive two-column block. Use `/columns` to insert one; on narrow screens columns stack for readability.

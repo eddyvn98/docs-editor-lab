@@ -14,6 +14,7 @@ import type {Comment} from "./comments";
 import "./comments.css";
 import "./color-tools.css";
 import "./image-files.css";
+import "./columns.css";
 import {insertImageFile} from "./imageFiles";
 import "./interactions.css";
 

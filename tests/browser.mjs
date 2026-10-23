@@ -18,6 +18,7 @@ async function run(){
     await page.goto("http://127.0.0.1:4173");
     await page.locator(".ProseMirror").waitFor();
     assert.ok(await page.locator(".ProseMirror > h1").count());
+    assert.equal(await page.locator(".ProseMirror .doc-columns").count(),1,"sample columns preserved");
     await page.locator(".ProseMirror > p").first().click({button:"right"});
     await page.getByRole("menuitem",{name:"Duplicate"}).waitFor();
     const menu=await page.locator(".ux-menu").boundingBox();

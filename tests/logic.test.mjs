@@ -12,4 +12,8 @@ test("paragraph converts and aligns",()=>{const a=actionsFor("paragraph").map(x=
 test("normalize unknown block kinds",()=>{assert.equal(kindFor("taskList"),"taskList");assert.equal(kindFor("unknown"),"text");});
 test("overlay clamps desktop geometry",()=>{assert.deepEqual(placeOverlay({x:1000,y:900},{width:270,height:320},{width:1024,height:768}),{x:746,y:440});});
 test("overlay clamps mobile geometry",()=>{assert.deepEqual(placeOverlay({x:-20,y:-30},{width:280,height:200},{width:360,height:600}),{x:8,y:8});assert.deepEqual(placeOverlay({x:0,y:0},{width:600,height:800},{width:350,height:500}),{x:8,y:8});});
+test("column picker is discoverable and contextual",()=>{
+  assert.deepEqual(filterInserts("columns").map(x=>x.id),["columns"]);
+  assert.ok(!actionsFor("columns").some(x=>x.id==="row-add"));
+});
 test("every menu has unique ids",()=>{for(const k of ["text","paragraph","image","table","cell","link","codeBlock","callout","horizontalRule"]){const a=actionsFor(k);assert.equal(new Set(a.map(x=>x.id)).size,a.length,k);}});

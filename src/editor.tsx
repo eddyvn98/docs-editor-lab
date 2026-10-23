@@ -13,6 +13,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
 import {CommentMark} from "./CommentMark";
+import {Column,Columns} from "./Columns";
 import { TextStyleKit } from "@tiptap/extension-text-style";
 
 function ImageFigure({node,selected,updateAttributes}:NodeViewProps){
@@ -80,6 +81,7 @@ export const extensions = [
   Highlight.configure({multicolor:true}),
   TextStyleKit,
   CommentMark,
+  Column,Columns,
 ];
 export const starterContent = [
   '<h1>Product planning notes</h1>',
@@ -93,6 +95,7 @@ export const starterContent = [
   '<blockquote><p>Great editing feels like working on the page, not managing the app.</p></blockquote>',
   '<pre><code>const editing = { focused: true, friction: "low" };</code></pre>',
   '<table><tbody><tr><th><p>Interaction</p></th><th><p>Target</p></th><th><p>Status</p></th></tr><tr><td><p>Selection toolbar</p></td><td><p>Text</p></td><td><p>Try it</p></td></tr><tr><td><p>Context actions</p></td><td><p>Cell / block</p></td><td><p>Try it</p></td></tr></tbody></table>',
+  '<div data-type="columns"><div data-type="column"><p>Explore ideas side by side</p></div><div data-type="column"><p>Compare without another table</p></div></div>',
   '<hr><h2>Quick thoughts</h2><p></p>',
 ].join("");
 export const STORAGE_KEY = "docs-editor-lab-v1";

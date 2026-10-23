@@ -41,6 +41,10 @@ export function insertBlock(editor: Editor, id: Action, pos: number) {
     case "divider": return c.setHorizontalRule().run();
     case "image": return c.insertContent({type:"image",attrs:{src:"https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=1100&q=85",alt:"Sample landscape",width:"80%",caption:"Edit caption"}}).run();
     case "table": return c.insertTable({rows:3,cols:3,withHeaderRow:true}).run();
+    case "columns": return c.insertContent({type:"columns",content:[
+      {type:"column",content:[{type:"paragraph"}]},
+      {type:"column",content:[{type:"paragraph"}]},
+    ]}).run();
     default: return false;
   }
 }
@@ -53,7 +57,7 @@ export function applyBlockAction(editor: Editor, id: Action, pos: number, cellPo
     const n=editor.state.doc.nodeAt(pos); if(!n) return false;
     const p=pos+n.nodeSize; return editor.chain().insertContentAt(p,{type:"paragraph"}).focus(p+1).run();
   }
-  if(["paragraph","h1","h2","h3","bullet","numbered","task","quote","callout","code","divider","image","table"].includes(id)) return insertBlock(editor,id,pos);
+  if(["paragraph","h1","h2","h3","bullet","numbered","task","quote","callout","code","divider","image","table","columns"].includes(id)) return insertBlock(editor,id,pos);
   if(cellPos != null) editor.commands.setTextSelection(cellPos); else focusBlock(editor,pos);
   const c=editor.chain().focus();
   switch(id) {
