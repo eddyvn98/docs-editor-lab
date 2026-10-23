@@ -10,6 +10,8 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
+import {CommentMark} from "./CommentMark";
+import { TextStyleKit } from "@tiptap/extension-text-style";
 
 function ImageFigure({ node, selected }: NodeViewProps) {
   const a = node.attrs as {src: string; alt?: string; width?: string; caption?: string};
@@ -41,6 +43,8 @@ export const extensions = [
   TaskList, TaskItem.configure({nested:true}),
   TextAlign.configure({types:["paragraph","heading"]}),
   Highlight.configure({multicolor:true}),
+  TextStyleKit,
+  CommentMark,
 ];
 export const starterContent = [
   '<h1>Product planning notes</h1>',

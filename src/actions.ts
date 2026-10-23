@@ -62,6 +62,13 @@ export function applyBlockAction(editor: Editor, id: Action, pos: number, cellPo
     case "indent": return c.sinkListItem("listItem").run();
     case "outdent": return c.liftListItem("listItem").run();
     case "row-add": return c.addRowAfter().run();
+    case "row-before": return c.addRowBefore().run();
+    case "col-before": return c.addColumnBefore().run();
+    case "merge-cells": return c.mergeCells().run();
+    case "split-cell": return c.splitCell().run();
+    case "header-row": return c.toggleHeaderRow().run();
+    case "header-column": return c.toggleHeaderColumn().run();
+    case "header-cell": return c.toggleHeaderCell().run();
     case "row-delete": return c.deleteRow().run();
     case "col-add": return c.addColumnAfter().run();
     case "col-delete": return c.deleteColumn().run();

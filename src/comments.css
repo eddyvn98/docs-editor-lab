@@ -1,0 +1,7 @@
+.ProseMirror .comment-anchor{background:#fff0ad;border-bottom:2px solid #e5bb53;border-radius:2px}
+.comments article{background:#fff;border:1px solid #e5e9f0;border-radius:8px;padding:10px;margin:10px 0}
+.comments article.resolved{opacity:.63}
+.comments .comment-reference{border:0;background:#fffae8;color:#715a14;font-size:11px;border-radius:4px;text-align:left;max-width:100%;white-space:normal;padding:5px}
+.comments p{font-size:13px;line-height:1.4;margin:9px 0}
+.comment-controls{display:flex;gap:7px}
+.comment-controls button{font-size:11px;background:#f5f7fa;border:1px solid #e2e6ed;border-radius:5px;padding:5px 8px;color:#66758a}

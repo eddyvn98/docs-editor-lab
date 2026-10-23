@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import type { Action, Kind } from "./logic";
 import { extensions, readLocalDocument, STORAGE_KEY } from "./editor";
@@ -7,12 +7,18 @@ import { useEditorUX } from "./useEditorUX";
 import type { Popup } from "./useEditorUX";
 import { SelectionToolbar, PopupMenu, DetailPopover } from "./FloatingUI";
 import { Gutter } from "./Gutter";
+import { DocumentTools } from "./DocumentTools";
+import { CommentsPanel } from "./CommentsPanel";
+import {anchorComment,readComments,persistComments} from "./comments";
+import type {Comment} from "./comments";
+import "./comments.css";
+import "./color-tools.css";
 import "./interactions.css";
 
-type Comment = { id:number; text:string; excerpt:string };
 export default function App() {
   const [revision,setRevision]=useState(0);
-  const [comments,setComments]=useState<Comment[]>([]);
+  const [comments,setComments]=useState<Comment[]>(readComments);
+  useEffect(()=>persistComments(comments),[comments]);
   const [outlineOpen,setOutlineOpen]=useState(true);
   const editor=useEditor({
     extensions, content:readLocalDocument(), immediatelyRender:false,
@@ -79,6 +85,7 @@ export default function App() {
     <header className="topbar">
       <div className="breadcrumbs"><span className="crumb">Workspace</span><span className="slash">/</span><strong>Product planning notes</strong><span className="tag">Lab</span></div>
       <div className="top-actions"><span className="save-state"><span className="save-dot"/> Saved locally</span>
+        <DocumentTools editor={editor} revision={revision}/>
         <button aria-label="Undo" title="Undo" onClick={()=>editor.chain().focus().undo().run()}>↶</button>
         <button aria-label="Redo" title="Redo" onClick={()=>editor.chain().focus().redo().run()}>↷</button>
         <button className="outline-toggle" onClick={()=>setOutlineOpen(v=>!v)}>{outlineOpen?"Hide outline":"Outline"}</button>
@@ -89,7 +96,7 @@ export default function App() {
         <div className="page-meta"><span className="doc-icon">▤</span> Document <span>·</span> Editable playground</div>
         <h1 className="document-title">Product planning notes</h1>
         <p className="document-hint">Select text, hover a block, or right-click an image or table cell. Your edits stay in this browser.</p>
-        <div className="editor-frame" onMouseMove={ux.onMouseMove} onMouseLeave={()=>ux.setHover(null)}
+        <div className="editor-frame" onMouseMove={ux.onMouseMove} onMouseLeave={event=>{if(!(event.relatedTarget instanceof Element && event.relatedTarget.closest("[data-ux-gutter]")))ux.setHover(null);}}
           onContextMenu={ux.onContextMenu} onClick={ux.onClick} onDragOver={ux.onDragOver}
           onDrop={ux.onDrop} onPointerUp={()=>requestAnimationFrame(ux.trackSelection)}>
           <EditorContent editor={editor}/>
@@ -103,20 +110,23 @@ export default function App() {
             editor.chain().focus().setTextSelection(Math.min(pos+1,editor.state.doc.content.size)).scrollIntoView().run();
           }}>{text || "Untitled heading"}</button>)}</nav>
         <div className="outline-help">Tip: drag ⠿ to reorder blocks.</div>
-        {comments.length>0 && <section className="comments"><strong>Comments · {comments.length}</strong>
-          {comments.map(c=><p key={c.id}><small>{c.excerpt}</small>{c.text}</p>)}</section>}
+        <CommentsPanel editor={editor} comments={comments} onUpdate={setComments}/>
       </aside>}
     </div>
     <Gutter hover={ux.hover} onInsert={()=>{if(ux.hover)ux.openGutter("insert",ux.hover);}}
       onMenu={()=>{if(ux.hover)ux.openGutter("menu",ux.hover);}}
-      onDragStart={event=>{if(ux.hover)ux.onDragStart(event,ux.hover.pos);}}/>
+      onDragStart={event=>{if(ux.hover)ux.onDragStart(event,ux.hover.pos);}}
+      onLeave={()=>ux.setHover(null)}/>
     {ux.selectionAnchor && !popup && <SelectionToolbar editor={editor} anchor={ux.selectionAnchor}
       onLink={()=>openDetail("link")} onComment={()=>openDetail("comment")}/>}
     {popup && (popup.type==="menu" || popup.type==="insert" || popup.type==="slash") &&
       <PopupMenu editor={editor} popup={popup} onChoose={handleAction} onClose={ux.close}/>}
     {popup && (popup.type==="link" || popup.type==="image" || popup.type==="comment") &&
       <DetailPopover key={popup.type+":"+popup.pos} editor={editor} popup={popup} onClose={ux.close}
-        onComment={text=>{const n=editor.state.doc.nodeAt(popup.pos);
-          setComments(list=>[...list,{id:Date.now(),text,excerpt:n?.textContent.slice(0,70) || "Text selection"}]);}}/>}
+        onComment={text=>{
+          const id=crypto.randomUUID();
+          const excerpt=anchorComment(editor,popup,id);
+          setComments(list=>[...list,{id,text,excerpt,resolved:false,createdAt:new Date().toISOString()}]);
+        }}/>}
   </main>;
 }

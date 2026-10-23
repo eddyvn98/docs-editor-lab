@@ -1,5 +1,5 @@
 export type Kind = "text"|"paragraph"|"heading"|"bulletList"|"orderedList"|"taskList"|"blockquote"|"callout"|"codeBlock"|"horizontalRule"|"image"|"table"|"cell"|"link";
-export type Action = "paragraph"|"h1"|"h2"|"h3"|"bullet"|"numbered"|"task"|"quote"|"callout"|"code"|"divider"|"image"|"table"|"duplicate"|"delete"|"insert-below"|"comment"|"copy"|"align-left"|"align-center"|"align-right"|"indent"|"outdent"|"link-edit"|"link-copy"|"link-remove"|"link-open"|"image-edit"|"image-download"|"image-copy"|"row-add"|"row-delete"|"col-add"|"col-delete"|"table-delete";
+export type Action = "paragraph"|"h1"|"h2"|"h3"|"bullet"|"numbered"|"task"|"quote"|"callout"|"code"|"divider"|"image"|"table"|"duplicate"|"delete"|"insert-below"|"comment"|"copy"|"align-left"|"align-center"|"align-right"|"indent"|"outdent"|"link-edit"|"link-copy"|"link-remove"|"link-open"|"image-edit"|"image-download"|"image-copy"|"row-add"|"row-delete"|"col-add"|"col-delete"|"table-delete"|"merge-cells"|"split-cell"|"header-row"|"header-column"|"header-cell"|"row-before"|"col-before";
 export type Item = { id: Action; label: string; shortcut?: string; destructive?: boolean };
 const I = (id: Action, label: string, shortcut?: string): Item => ({id,label,shortcut,destructive: id === "delete" || id === "table-delete"});
 export const insertItems: Item[] = [
@@ -13,7 +13,7 @@ const convert = insertItems.slice(0, 10);
 export function actionsFor(kind: Kind): Item[] {
   switch (kind) {
     case "link": return [I("link-open","Open link"),I("link-edit","Edit link"),I("link-copy","Copy URL"),I("link-remove","Remove link")];
-    case "table": case "cell": return [I("row-add","Insert row below"),I("row-delete","Delete row"),I("col-add","Insert column right"),I("col-delete","Delete column"),I("align-left","Align left"),I("align-center","Align center"),I("align-right","Align right"),I("copy","Copy"),I("comment","Comment"),I("table-delete","Delete table")];
+    case "table": case "cell": return [I("row-before","Insert row above"),I("row-add","Insert row below"),I("row-delete","Delete row"),I("col-before","Insert column left"),I("col-add","Insert column right"),I("col-delete","Delete column"),I("merge-cells","Merge selected cells"),I("split-cell","Split merged cell"),I("header-row","Toggle header row"),I("header-column","Toggle header column"),I("header-cell","Toggle header cell"),I("align-left","Align left"),I("align-center","Align center"),I("align-right","Align right"),I("copy","Copy"),I("comment","Comment"),I("table-delete","Delete table")];
     case "image": return [I("image-edit","Caption, replace or resize"),I("image-copy","Copy image URL"),I("image-download","Download image"),I("duplicate","Duplicate"),I("insert-below","Insert below"),I("delete","Delete image")];
     case "horizontalRule": return [I("insert-below","Insert below"),I("duplicate","Duplicate"),I("delete","Delete divider")];
     case "codeBlock": return [I("paragraph","Turn into text"),I("copy","Copy code"),I("duplicate","Duplicate"),I("insert-below","Insert below"),I("delete","Delete block")];

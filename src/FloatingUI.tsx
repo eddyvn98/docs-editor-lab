@@ -20,6 +20,17 @@ export function SelectionToolbar({editor,anchor,onLink,onComment}:{
     <Button label="Code" run={()=>editor.chain().focus().toggleCode().run()}/>
     <Button label="Highlight" run={()=>editor.chain().focus().toggleHighlight().run()}/>
     <span className="toolbar-divider"/>
+    <div className="color-tools" aria-label="Text color palette">
+      {["#27344b","#e2585b","#2975d9"].map(color=><button key={color} type="button" aria-label={"Text color "+color}
+        title={"Text color "+color} onPointerDown={e=>e.preventDefault()}
+        onClick={()=>editor.chain().focus().setColor(color).run()}>
+        <span className="color-swatch" style={{background:color}}/></button>)}
+      {["#fff3b0","#dcecff"].map(color=><button key={color} type="button" aria-label={"Background color "+color}
+        title={"Background color "+color} onPointerDown={e=>e.preventDefault()}
+        onClick={()=>editor.chain().focus().setBackgroundColor(color).run()}>
+        <span className="color-swatch" style={{background:color}}/></button>)}
+    </div>
+    <span className="toolbar-divider"/>
     <Button label="Link" run={onLink}/>
     <Button label="Comment" run={onComment}/>
   </Anchored>;
