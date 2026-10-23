@@ -41,7 +41,7 @@ export default function App() {
       const rect=editor.view.coordsAtPos(selection.from);
       const type=key==="k"?"link":"comment";
       ux.setSelectionAnchor(null);
-      ux.setPopup({type,block:type,pos:selection.$from.depth?selection.$from.before(1):selection.from,
+      ux.setPopup({type,block:type==="link"?"link":"text",pos:selection.$from.depth?selection.$from.before(1):selection.from,
         anchor:{element:null,point:{x:rect.left,y:rect.bottom+6},mode:"caret"},from:selection.from,to:selection.to});
     };
     document.addEventListener("keydown",shortcut);
