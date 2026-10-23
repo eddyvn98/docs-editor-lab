@@ -87,21 +87,17 @@ async function run(){
     await page.evaluate(()=>window.scrollTo(0,220));
     const anchored=await page.locator(".ux-menu").boundingBox();
     assert.ok(anchored && Number.isFinite(anchored.y));
-    await page.evaluate(()=>{
-      window.__dragEvents=[];
-      for(const type of ["dragstart","dragover","drop","dragend"]){
-        document.addEventListener(type,e=>{
-          if(window.__dragEvents.length>=32)return;
-          window.__dragEvents.push(type+":"+(e.target instanceof Element ? e.target.tagName : "?")+
-            ":"+(e.dataTransfer?.types ? Array.from(e.dataTransfer.types).join(",") : "none"));
-        },true);
-      }
-    });
     const source=page.locator(".ProseMirror > p").first();
-    const sourceText=await source.textContent();
+    const destination=page.locator(".ProseMirror > h2").first();
     await source.hover();
-    await page.getByRole("button",{name:"Drag or open block actions"}).dragTo(page.locator(".ProseMirror > blockquote"));
-    assert.notEqual(await page.locator(".ProseMirror > p").first().textContent(),sourceText,"drag reordered a block");
+    const grip=page.getByRole("button",{name:"Drag or open block actions"});
+    const from=await grip.boundingBox(),to=await destination.boundingBox();
+    assert.ok(from&&to,"grip and target are visible");
+    await page.mouse.move(from.x+from.width/2,from.y+from.height/2);
+    await page.mouse.down();
+    await page.mouse.move(to.x+18,to.y+to.height*0.75,{steps:16});
+    await page.mouse.up();
+    assert.equal(await destination.evaluate(el=>el.previousElementSibling?.tagName),"H1","drag moved paragraph after heading");
     assert.deepEqual(errors,[]);
     await context.close();console.log("PASS Chromium width="+width);
   }
