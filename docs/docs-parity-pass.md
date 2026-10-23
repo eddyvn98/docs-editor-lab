@@ -14,3 +14,20 @@ Scope: Docs only. Board/Kanban and unrelated Lark products are deliberately excl
 - No plugin installation, no cloud/shared template claims.
 
 Validation constraints: the GitHub connector can read and write, but the shell cannot resolve github.com/npm hosts to install dependencies. The optional browser suite tests template Undo, inline sheet edit and ToC/Timeline/Mermaid at two widths. It must be executed against a dependency-enabled clean clone. No CI is invoked.
+
+## Reproducible local browser acceptance
+
+Playwright is intentionally not part of production dependencies, nor is it installed by CI. On a clean clone with Node.js 22 or later and npm:
+
+```bash
+npm ci
+npm test
+npm run build
+npm install --no-save --package-lock=false playwright@1.56.1
+npx playwright install chromium
+npm run dev -- --port 5173
+# In another terminal:
+EDITOR_URL=http://127.0.0.1:5173 node tests/docs-parity-browser.mjs
+```
+
+The suite runs at 1365px and 390px. Playwright is a local QA prerequisite; do not interpret an unavailable dependency or browser as a passing test. No Board/Kanban or workflow changes.

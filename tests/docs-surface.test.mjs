@@ -64,7 +64,7 @@ test('block colors reject CSS code and URLs', () => { for(const c of ['url(x)','
 test('block indentation stays in a supported range', () => { assert.equal(blockIndent(99),8);assert.equal(blockIndent(-2),0);assert.equal(blockIndent(NaN),0);assert.equal(blockIndent(2.8),2); });
 test('callout icons cannot contain markup', () => assert.equal(calloutIcon('<img>'),calloutIcons[0]));
 test('block style output contains validated properties only', () => assert.deepEqual(blockCSS({blockBackground:'url(x)',blockTextColor:'#123456',blockIndent:2}),{color:'#123456',marginInlineStart:'min(3em, 35%)'}));
-test('templates can be found from the slash menu', () => assert.deepEqual(filterInserts('template').map(x=>x.id),['templates']));
+test('templates can be found from the slash menu', () => assert.deepEqual(filterInserts('template').map(x=>x.id),['template-meeting','template-plan','template-weekly','template-swot','template-implementation','templates-gallery']));
 test('callout and text offer block styling, images do not', () => { assert.ok(actionsFor('callout').some(x=>x.id==='block-style'));assert.ok(!actionsFor('image').some(x=>x.id==='block-style')); });
 test('image context menus offer crop without text commands', () => { assert.ok(actionsFor('image').some(x=>x.id==='image-crop'));assert.ok(!actionsFor('image').some(x=>x.id==='h1')); });
 test('new menu actions never duplicate an id', () => { for(const type of ['paragraph','heading','callout','codeBlock','table','image','columns','taskItem']){const a=actionsFor(type);assert.equal(new Set(a.map(x=>x.id)).size,a.length);} });

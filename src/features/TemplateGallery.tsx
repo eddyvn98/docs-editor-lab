@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import type { JSONContent } from '@tiptap/core';
 import { Modal } from './Modal';
-import { DOCUMENT_TEMPLATES, searchTemplates } from './templates';
+import { searchTemplates } from './templates';
 import type { DocumentTemplate } from './templates';
 import { insertFeatureBlocks } from './featureCommands';
 type Tab = 'Recommended' | 'My templates' | 'Shared with me';

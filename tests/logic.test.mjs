@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { actionsFor, filterInserts, kindFor, placeOverlay, slashQuery } from "../src/logic.ts";
 
 test("slash recognizes empty-line queries",()=>{assert.equal(slashQuery("/"),"");assert.equal(slashQuery("/Heading 2"),"heading 2");assert.equal(slashQuery("before /head"),null);assert.equal(slashQuery("/bad!"),null);});
-test("search is case-insensitive",()=>{assert.deepEqual(filterInserts("HEAD").map(x=>x.id),["h1","h2","h3"]);assert.deepEqual(filterInserts("table").map(x=>x.id),["table"]);assert.equal(filterInserts("xyz").length,0);});
+test("search is case-insensitive",()=>{assert.deepEqual(filterInserts("HEAD").map(x=>x.id),["h1","h2","h3"]);assert.deepEqual(filterInserts("table").map(x=>x.id),["table","toc"]);assert.equal(filterInserts("xyz").length,0);});
 test("links expose link actions, not block deletion",()=>{assert.deepEqual(actionsFor("link").map(x=>x.id),["link-open","link-edit","link-copy","link-remove"]);});
 test("images have their own actions",()=>{const a=actionsFor("image").map(x=>x.id);assert.ok(a.includes("image-edit")&&a.includes("image-download")&&a.includes("delete")&&!a.includes("row-add"));});
 test("cells allow row and column edits",()=>{const a=actionsFor("cell").map(x=>x.id);assert.ok(["row-add","row-delete","col-add","col-delete","table-delete"].every(x=>a.includes(x)));});

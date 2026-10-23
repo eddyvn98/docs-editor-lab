@@ -12,7 +12,7 @@ try{
   await editor.waitFor();
   await page.getByRole('button',{name:'Document templates'}).click();
   const gallery=page.getByRole('dialog',{name:'Template gallery'});
-  await gallery.getByRole('button',{name:/Meeting Notes/}).click();
+  await gallery.locator('.template-card').filter({hasText:'Meeting Notes'}).click();
   await gallery.getByRole('region',{name:'Template preview'}).getByText('Meeting Notes').waitFor();
   await gallery.getByRole('button',{name:'Insert Meeting Notes'}).click();
   const inserted=editor.getByText('Meeting Notes',{exact:true});
