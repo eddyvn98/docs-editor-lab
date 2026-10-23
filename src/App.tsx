@@ -25,6 +25,34 @@ export default function App() {
   const [outlineOpen,setOutlineOpen]=useState(true);
   const editor=useEditor({
     extensions, content:readLocalDocument(), immediatelyRender:false,
+    editorProps:{
+      handleDOMEvents:{
+        dragover(_view,event){
+          if(event.dataTransfer?.types.includes("application/x-doc-block")){
+            event.preventDefault();return true;
+          }
+          return false;
+        },
+      },
+      handleDrop(view,event){
+        const raw=event.dataTransfer?.getData("application/x-doc-block");
+        if(!raw)return false;
+        event.preventDefault();
+        const from=Number(raw);
+        if(!Number.isInteger(from))return true;
+        const hit=view.posAtCoords({left:event.clientX,top:event.clientY});
+        if(!hit)return true;
+        const resolved=view.state.doc.resolve(hit.pos);
+        const to=resolved.depth>0?resolved.before(1):hit.pos;
+        const node=view.state.doc.nodeAt(from);
+        if(!node||from===to||(to>from&&to<from+node.nodeSize))return true;
+        const tr=view.state.tr.delete(from,from+node.nodeSize);
+        const at=tr.mapping.map(to);
+        if(at!==from)view.dispatch(tr.insert(at,node).scrollIntoView());
+        return true;
+      },
+    },
+
     onUpdate:({editor:ed})=>{
       setRevision(v=>v+1);
       try{localStorage.setItem(STORAGE_KEY,JSON.stringify(ed.getJSON()));}catch{ /* private mode */ }
