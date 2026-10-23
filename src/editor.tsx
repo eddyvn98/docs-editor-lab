@@ -15,6 +15,7 @@ import { DocumentImage } from './DocumentImage';
 import { SearchHighlights } from './SearchHighlights';
 import { HeadingFolding } from './HeadingFolding';
 import { DocumentAppearance } from './DocumentAppearance';
+import { ToggleBlock, PageBreak } from './features/AdvancedBlocks';
 import { starterContent } from './sampleContent';
 import { validateDocument } from './contentIO';
 import { DOCUMENT_KEY, RECOVERY_KEY } from './storage';
@@ -34,6 +35,7 @@ export const extensions = [
   TableKit.configure({ table: { resizable: true } }), TaskList, TaskItem.configure({ nested: true }),
   TextAlign.configure({ types: ['paragraph', 'heading'] }), Highlight.configure({ multicolor: true }),
   TextStyleKit, CommentMark, Column, Columns, BlockIdentity, SearchHighlights, HeadingFolding, DocumentAppearance,
+  ToggleBlock, PageBreak,
 ];
 export function readLocalDocument(): string | JSONContent {
   startupIssue = '';

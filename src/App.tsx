@@ -30,6 +30,7 @@ import { ViewControls } from './ViewControls';
 import { ShortcutHelp } from './ShortcutHelp';
 import { InsertPalette } from './InsertPalette';
 import { ImageLightbox } from './ImageLightbox';
+import { TemplateGallery } from './features/TemplateGallery';
 import './comments.css';
 import './color-tools.css';
 import './image-files.css';
@@ -37,11 +38,13 @@ import './columns.css';
 import './interactions.css';
 import './completion.css';
 import './workspace-polish.css';
+import './features/features.css';
 
 export default function App() {
   const [initial] = useState(readLocalDocument);
   const [outlineOpen, setOutlineOpen] = useState(true), [tab, setTab] = useState<'outline' | 'comments'>('outline');
   const [message, setMessage] = useState(''), [help, setHelp] = useState(false), [insert, setInsert] = useState(false);
+  const [templates, setTemplates] = useState(false);
   const [imagePosition, setImagePosition] = useState<number | null>(null);
   const hoverTimer = useRef<number>(0), editorRef = useRef<Editor | null>(null);
   const editor = useEditor({
@@ -49,9 +52,17 @@ export default function App() {
     editorProps: {
       attributes: { 'aria-label': 'Document content', role: 'textbox', 'aria-multiline': 'true' },
       transformPastedHTML: sanitizeHTML,
+      handleKeyDown(_view, event) {
+        if (editorRef.current?.isEditable !== false) return false;
+        if ((event.ctrlKey || event.metaKey) && ['b', 'i', 'u', 'z', 'y', 'k', 'd', 'm', 'v', 'x'].includes(event.key.toLowerCase())) {
+          event.preventDefault(); return true;
+        }
+        return false;
+      },
       handlePaste(_view, event) {
         const file = Array.from(event.clipboardData?.files || []).find(f => f.type.startsWith('image/'));
         const instance = editorRef.current;
+        if (instance && !instance.isEditable) { event.preventDefault(); return true; }
         if (!file || !instance) return false;
         event.preventDefault();
         if (instance.isEditable) void insertImageFile(instance, file).catch(error => setMessage(String(error)));
@@ -60,6 +71,7 @@ export default function App() {
       handleDrop(view, event) {
         const file = Array.from(event.dataTransfer?.files || []).find(f => f.type.startsWith('image/'));
         const instance = editorRef.current;
+        if (instance && !instance.isEditable) { event.preventDefault(); return true; }
         if (!file || !instance) return false;
         event.preventDefault();
         const pos = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos;
@@ -75,7 +87,7 @@ export default function App() {
   useEditorShortcuts(readOnly ? null : editor, ux.setPopup);
   useEffect(() => () => window.clearTimeout(hoverTimer.current), []);
   useEffect(() => {
-    ux.close(false); setInsert(false);
+    ux.close(false); setInsert(false); setTemplates(false); setImagePosition(null);
     editor?.view.dom.setAttribute('aria-readonly', String(readOnly));
   }, [readOnly, editor, ux.close]);
   useEffect(() => {
@@ -104,6 +116,7 @@ export default function App() {
     if (id === 'comment') { openDetail('comment', popup); return; }
     if (id === 'link-edit') { openDetail('link', popup); return; }
     if (id === 'image-edit') { openDetail('image', popup); return; }
+    if (id === 'image-preview') { const pos = popup.pos; ux.close(false); setImagePosition(pos); return; }
     const target = popup; ux.close(false);
     void executeAction(editor, target, id).then(() => {
       setMessage(['copy', 'link-copy', 'image-copy', 'block-link'].includes(id) ? 'Copied to clipboard' : '');
@@ -153,7 +166,8 @@ export default function App() {
         <button onClick={() => { patchView({ focus: false }); setOutlineOpen(value => !value); }} aria-label="Toggle outline and comments">&#9776;</button>
       </div>
     </header>
-    <FormatBar editor={editor} readOnly={readOnly} onInsert={() => { ux.close(false); setInsert(true); }} onLink={() => openDetail('link')} onComment={() => openDetail('comment')} onHelp={() => setHelp(true)}/>
+    <FormatBar editor={editor} readOnly={readOnly} onInsert={() => { ux.close(false); setInsert(true); }} onLink={() => openDetail('link')} onComment={() => openDetail('comment')} onHelp={() => setHelp(true)}
+      onTemplates={() => { ux.close(false); setTemplates(true); }}/>
     <TableToolbar editor={editor} readOnly={readOnly}/>
     {(docState.notice || message) && <div className="document-notice" role={docState.notice ? 'alert' : 'status'}>
       <span>{docState.notice || message}</span>
@@ -193,10 +207,10 @@ export default function App() {
       </div>
     </aside>}
     </div>
-    {!readOnly && <Gutter hover={ux.hover} onInsert={() => { if (ux.hover) ux.openGutter('insert', ux.hover); }} onMenu={() => { if (ux.hover) ux.openGutter('menu', ux.hover); }}
+    {!readOnly && !templates && imagePosition === null && <Gutter hover={ux.hover} onInsert={() => { if (ux.hover) ux.openGutter('insert', ux.hover); }} onMenu={() => { if (ux.hover) ux.openGutter('menu', ux.hover); }}
       onPointerDown={ux.onGutterPointerDown} onEnter={() => clearTimeout(hoverTimer.current)} onLeave={clearHover}/>}
     {!readOnly && ux.indicator && <div className="block-drop-indicator" style={ux.indicator}/>}
-    {!readOnly && ux.selectionAnchor && !popup && !insert && !help && <SelectionToolbar editor={editor} anchor={ux.selectionAnchor} onLink={() => openDetail('link')} onComment={() => openDetail('comment')}/>}
+    {!readOnly && ux.selectionAnchor && !popup && !insert && !help && !templates && imagePosition === null && <SelectionToolbar editor={editor} anchor={ux.selectionAnchor} onLink={() => openDetail('link')} onComment={() => openDetail('comment')}/>}
     {!readOnly && popup && ['menu', 'insert', 'slash'].includes(popup.type) && <PopupMenu editor={editor} popup={popup} onChoose={handleAction} onClose={() => ux.close(true)}/>}
     {!readOnly && popup && ['link', 'image', 'comment'].includes(popup.type) && <DetailPopover key={`${popup.type}:${popup.blockId || popup.pos}`} editor={editor} popup={popup} onClose={ux.close}
       onComment={note => {
@@ -205,6 +219,7 @@ export default function App() {
         setTab('comments'); setOutlineOpen(true); patchView({ focus: false });
       }}/>} 
     {insert && !readOnly && <InsertPalette editor={editor} onClose={() => setInsert(false)}/>}
+    {templates && !readOnly && <TemplateGallery editor={editor} onClose={() => setTemplates(false)}/>}
     {help && <ShortcutHelp onClose={() => setHelp(false)}/>}
     {imagePosition !== null && <ImageLightbox editor={editor} position={imagePosition} onClose={() => setImagePosition(null)}/>}
   </main>;

@@ -3,7 +3,7 @@ import { Plugin } from "@tiptap/pm/state";
 import type { Editor } from "@tiptap/react";
 
 export const BLOCK_TYPES = ["paragraph", "heading", "blockquote", "callout", "codeBlock",
-  "bulletList", "orderedList", "taskList", "listItem", "taskItem", "image", "table", "columns", "horizontalRule"];
+  "bulletList", "orderedList", "taskList", "listItem", "taskItem", "image", "table", "columns", "horizontalRule", "toggleBlock", "pageBreak"];
 export const BlockIdentity = Extension.create({
   name: "blockIdentity",
   addGlobalAttributes() {

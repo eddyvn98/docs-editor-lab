@@ -3,8 +3,8 @@ import { useLayoutEffect, useRef } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useEditorPulse } from './useEditorPulse';
 
-type Props = { editor: Editor; readOnly: boolean; onInsert: () => void; onLink: () => void; onComment: () => void; onHelp: () => void };
-export function FormatBar({ editor, readOnly, onInsert, onLink, onComment, onHelp }: Props) {
+type Props = { editor: Editor; readOnly: boolean; onInsert: () => void; onLink: () => void; onComment: () => void; onHelp: () => void; onTemplates: () => void };
+export function FormatBar({ editor, readOnly, onInsert, onLink, onComment, onHelp, onTemplates }: Props) {
   useEditorPulse(editor);
   const dock = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -88,6 +88,7 @@ export function FormatBar({ editor, readOnly, onInsert, onLink, onComment, onHel
     </div>
     <div className="format-group">
       {button('Add link', 'Link', onLink)}{button('Add comment', 'Comment', onComment)}
+      {button('Insert template', 'Templates', onTemplates)}
       {button('Clear text formatting', 'Clear', clearFormatting)}
       {button('Keyboard shortcuts', '?', onHelp)}
     </div>

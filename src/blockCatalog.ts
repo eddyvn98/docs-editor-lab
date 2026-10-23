@@ -10,6 +10,8 @@ export function blankBlock(id: string, rows = 3, columns = 3): InsertDraft | nul
   if (['bullet', 'numbered', 'task'].includes(id)) return { type: id === 'task' ? 'taskList' : id === 'bullet' ? 'bulletList' : 'orderedList',
     content: [{ type: id === 'task' ? 'taskItem' : 'listItem', attrs: id === 'task' ? { checked: false } : undefined, content: [paragraph()] }] };
   if (id === 'quote' || id === 'callout') return { type: id === 'quote' ? 'blockquote' : 'callout', content: [paragraph()] };
+  if (id === 'toggle') return { type: 'toggleBlock', attrs: { title: 'Details', open: true }, content: [paragraph()] };
+  if (id === 'page-break') return { type: 'pageBreak' };
   if (id === 'code') return { type: 'codeBlock' };
   if (id === 'divider') return { type: 'horizontalRule' };
   if (id === 'columns') return { type: 'columns', content: [0, 1].map(() => ({ type: 'column', content: [paragraph()] })) };
@@ -26,4 +28,5 @@ export const blockDescriptions: Record<string, string> = {
   bullet: 'An unordered list', numbered: 'An ordered list', task: 'A checklist with checkboxes', quote: 'A quotation with an accent border',
   callout: 'Highlight a note or warning', code: 'A monospaced code block', divider: 'A horizontal separator',
   image: 'Insert an image placeholder, then replace or upload', table: 'A grid with a header row', columns: 'Two editable columns, stacked on narrow screens',
+  toggle: 'Collapsible details with an editable title', 'page-break': 'Start a new page when printing',
 };

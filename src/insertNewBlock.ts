@@ -12,7 +12,7 @@ export function insertNewBlock(editor: Editor, id: string, rows = 3, columns = 3
   const at = reuse ? pos : Math.min(doc.content.size, pos + (current?.nodeSize || 0));
   try {
     const node = editor.schema.nodeFromJSON(draft); node.check();
-    const trailing = ['image', 'table', 'columns', 'horizontalRule'].includes(node.type.name);
+    const trailing = ['image', 'table', 'columns', 'horizontalRule', 'pageBreak'].includes(node.type.name);
     const tr = editor.state.tr.replaceWith(at, reuse ? at + current!.nodeSize : at,
       trailing ? [node, editor.schema.nodes.paragraph.create()] : node);
     tr.doc.check();

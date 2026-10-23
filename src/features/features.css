@@ -1,0 +1,59 @@
+.app-shell .topbar { z-index:40; }
+.ProseMirror .toggle-block { margin:15px 0; border:1px solid #e3e9f2; border-radius:8px; padding:11px 14px; }
+.toggle-summary { display:flex; align-items:center; gap:8px; }
+.toggle-summary button { flex:none; width:24px; height:26px; border:0; border-radius:5px; background:#eef3fb; color:#5074ad; }
+.toggle-summary input { width:100%; min-width:0; border:0; background:transparent; font:inherit; font-weight:600; font-size:15px; line-height:1.5; outline:none; }
+.toggle-summary input:focus { box-shadow:0 1px 0 #a9bfdf; }
+.toggle-body { margin:7px 0 2px 32px; }
+.document-page-break { text-align:center; font-size:11px; color:#98a2b3; border-top:1px dashed #ccd7e6; border-bottom:1px dashed #ccd7e6; margin:24px 0; padding:4px; user-select:none; }
+.feature-dialog { width:min(650px,calc(100vw - 24px)); max-height:calc(100dvh - 40px); border:1px solid #dbe3ef; border-radius:14px; padding:22px; color:#34435a; background:#fff; box-shadow:0 25px 90px #172b4b38; overflow:auto; }
+.feature-dialog::backdrop { background:#1b2b4866; backdrop-filter:blur(2px); }
+.feature-dialog-heading { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:14px; }
+.feature-dialog-heading h2 { margin:0; font-size:19px; letter-spacing:-.02em; }
+.feature-dialog-heading button { font-size:23px; padding:1px 8px; }
+.feature-dialog button { border:1px solid #dce4ee; border-radius:6px; padding:7px 11px; background:#fff; color:#4e6380; cursor:pointer; font-size:12px; }
+.feature-dialog button:hover { background:#edf3fe; }
+.feature-dialog button:disabled { opacity:.4; cursor:not-allowed; }
+.feature-dialog p { color:#8992a2; font-size:13px; line-height:1.6; }
+.feature-dialog input:not([type=checkbox]):not([type=range]) { border:1px solid #dce4ef; border-radius:7px; padding:10px; font:inherit; font-size:13px; width:100%; }
+.feature-dialog-actions { display:flex; align-items:center; justify-content:flex-end; gap:9px; margin-top:20px; }
+.feature-dialog .primary { background:var(--feature-accent,#356fe0); color:#fff; border-color:transparent; }
+.feature-dialog .feature-error { color:#ad3b4a; background:#fff0f1; padding:10px; border-radius:6px; }
+.template-gallery { width:min(820px,calc(100vw - 24px)); }
+.template-categories { display:flex; flex-wrap:wrap; gap:7px; margin:15px 0; }
+.template-categories [aria-pressed=true],.template-card[aria-pressed=true] { border-color:#90b4f0!important; background:#f3f7ff!important; }
+.template-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:13px; }
+.template-card { display:flex; flex-direction:column; text-align:left; align-items:flex-start; gap:8px; padding:14px!important; }
+.template-card>span:not(.template-mini-page) { color:#8691a2; font-size:12px; line-height:1.5; }
+.template-card strong { color:#3f536f; font-size:13px; }
+.template-card small { margin-top:auto; padding:3px 5px; background:#eef2f8; color:#8a98ae; border-radius:4px; }
+.template-mini-page { display:flex; flex-direction:column; gap:6px; width:54px; height:65px; border:1px solid #dbe4f2; background:#fff; padding:10px 8px; border-radius:4px; }
+.template-mini-page b,.template-mini-page i { display:block; height:3px; border-radius:2px; width:100%; background:#d8e2f0; }
+.template-mini-page b { background:#97b7e8; width:70%; height:5px; }
+.template-mini-page i:nth-child(even) { width:80%; }
+.shortcut-list>div { display:flex; justify-content:space-between; align-items:center; gap:20px; padding:11px 0; border-bottom:1px solid #edf0f5; font-size:13px; }
+.shortcut-list dd { margin:0; text-align:right; }
+.shortcut-list kbd { color:#78879d; font-size:11px; }
+.image-tools-dialog { width:min(1000px,calc(100vw - 24px)); }
+.image-tools-options { display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+.image-tools-options span { margin-left:auto; font-size:11px; color:#929cac; }
+.image-tools-options [aria-pressed=true] { background:#e9f1ff; color:#3264bd; }
+.image-preview-scroll { overflow:auto; max-height:50vh; text-align:center; background:#f4f6fa; border-radius:8px; padding:12px; }
+.crop-surface { position:relative; display:inline-block; vertical-align:top; max-width:100%; line-height:0; overflow:hidden; }
+.crop-surface>img { display:block; max-width:100%; max-height:45vh; height:auto; width:auto; }
+.crop-surface.natural-size { max-width:none; }
+.crop-surface.natural-size>img { max-height:none; max-width:none; }
+.crop-box { position:absolute; border:2px solid #fff; outline:1px solid #518ced; box-shadow:0 0 0 2000px #162b4b66; cursor:move; touch-action:none; }
+.crop-box span { position:absolute; top:5px; left:5px; background:#285ebf; color:white; padding:6px; font-size:10px; line-height:1; }
+.crop-box::after { content:""; position:absolute; inset:33% 0; border-top:1px solid #ffffff66; border-bottom:1px solid #ffffff66; pointer-events:none; }
+.crop-controls { margin-top:14px; }
+.crop-presets { display:flex; flex-wrap:wrap; gap:7px; }
+.crop-sliders { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 25px; margin:14px 0; }
+.crop-sliders label { display:flex; flex-direction:column; gap:6px; font-size:12px; color:#7b8ba1; text-transform:capitalize; }
+.crop-controls input { accent-color:#356fe0; width:100%; }
+.crop-controls small { font-size:11px; color:#8a96a8; }
+.document-page-break::before { content:"Page break"; }
+@media(max-width:780px){.template-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:560px){.feature-dialog{padding:16px;max-height:calc(100dvh - 24px)}.feature-dialog input:not([type=range]){font-size:16px!important}.crop-sliders{gap:10px}}
+@media print{.feature-dialog{display:none!important}.toggle-body{display:block!important}.toggle-summary button{display:none!important}.document-page-break{break-after:page;page-break-after:always;height:0;padding:0;margin:0;border:0;font-size:0}.document-page-break::before{content:none}}
+.app-shell[data-theme=dark] .feature-dialog{background:#202b3e;color:#e4ebf5}.app-shell[data-theme=dark] .feature-dialog button{background:#2a3850;color:#d9e4f4;border-color:#475874}.app-shell[data-theme=dark] .toggle-block{border-color:#475874}.app-shell[data-theme=dark] .toggle-summary input{color:inherit}.app-shell[data-theme=dark] .feature-dialog .primary{background:#376bc2;color:#fff}
