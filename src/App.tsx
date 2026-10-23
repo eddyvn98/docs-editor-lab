@@ -1,53 +1,122 @@
+import { useMemo, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Image from "@tiptap/extension-image";
-import Link from "@tiptap/extension-link";
-import { TableKit } from "@tiptap/extension-table";
-import TaskList from "@tiptap/extension-task-list";
-import TaskItem from "@tiptap/extension-task-item";
-import TextAlign from "@tiptap/extension-text-align";
-import Highlight from "@tiptap/extension-highlight";
+import type { Action, Kind } from "./logic";
+import { extensions, readLocalDocument, STORAGE_KEY } from "./editor";
+import { applyBlockAction, insertBlock } from "./actions";
+import { useEditorUX } from "./useEditorUX";
+import type { Popup } from "./useEditorUX";
+import { SelectionToolbar, PopupMenu, DetailPopover } from "./FloatingUI";
+import { Gutter } from "./Gutter";
+import "./interactions.css";
 
-const starterContent = `
-  <h1>Product planning notes</h1>
-  <p>Select text, hover a block, or right-click content to explore the editor.</p>
-  <h2>Today</h2>
-  <ul data-type="taskList"><li data-type="taskItem" data-checked="true"><label><input type="checkbox" checked="checked"><span></span></label><div><p>Review the editor interactions</p></div></li><li data-type="taskItem" data-checked="false"><label><input type="checkbox"><span></span></label><div><p>Collect feedback</p></div></li></ul>
-  <blockquote><p>Keep each action close to the content it affects.</p></blockquote>
-  <p><a href="https://example.com">Reference link</a></p>
-  <pre><code>const focused = true;</code></pre>
-  <table><tbody><tr><th><p>Item</p></th><th><p>Status</p></th></tr><tr><td><p>Selection toolbar</p></td><td><p>Ready to improve</p></td></tr></tbody></table>
-  <p>Use / on a blank line to add a block.</p>
-`;
-
+type Comment = { id:number; text:string; excerpt:string };
 export default function App() {
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: false }),
-      Link.configure({ openOnClick: false }),
-      Image,
-      TableKit.configure({ table: { resizable: true } }),
-      TaskList,
-      TaskItem.configure({ nested: true }),
-      TextAlign.configure({ types: ["paragraph", "heading"] }),
-      Highlight.configure({ multicolor: true }),
-    ],
-    content: starterContent,
-    immediatelyRender: false,
+  const [revision,setRevision]=useState(0);
+  const [comments,setComments]=useState<Comment[]>([]);
+  const [outlineOpen,setOutlineOpen]=useState(true);
+  const editor=useEditor({
+    extensions, content:readLocalDocument(), immediatelyRender:false,
+    onUpdate:({editor:ed})=>{
+      setRevision(v=>v+1);
+      try{localStorage.setItem(STORAGE_KEY,JSON.stringify(ed.getJSON()));}catch{ /* private mode */ }
+    },
   });
+  const ux=useEditorUX(editor);
+  const outline=useMemo(()=>{
+    const entries:{text:string;pos:number;level:number}[]=[];
+    editor?.state.doc.descendants((node,pos)=>{
+      if(node.type.name==="heading") entries.push({text:node.textContent,pos,level:node.attrs.level as number});
+    });
+    return entries;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[editor,revision]);
+  if(!editor) return <main className="loading">Loading document…</main>;
 
-  return (
-    <main className="app-shell">
-      <header className="topbar">
-        <div><span className="crumb">Documents</span><span className="slash">/</span><strong>Product planning notes</strong></div>
-        <div className="save-state"><span className="save-dot" /> All changes saved</div>
-      </header>
+  const popup=ux.popup;
+  const openDetail=(type:"link"|"image"|"comment",source?:Popup)=>{
+    const sel=editor.state.selection;
+    const anchor=source?.anchor || ux.selectionAnchor || {element:null,point:{x:innerWidth/2,y:120},mode:"selection" as const};
+    ux.setSelectionAnchor(null);
+    ux.setPopup({type,block:type as Kind,pos:source?.pos ?? (sel.$from.depth ? sel.$from.before(1) : sel.from),
+      anchor,from:source?.from ?? sel.from,to:source?.to ?? sel.to});
+  };
+  const handleAction=(id:Action)=>{
+    if(!popup)return;
+    if(popup.type==="slash"){
+      const node=editor.state.doc.nodeAt(popup.pos);
+      if(node && node.type.name==="paragraph"){
+        editor.commands.deleteRange({from:popup.pos+1,to:popup.pos+1+node.textContent.length});
+      }
+    }
+    if(id==="comment"){openDetail("comment",popup);return;}
+    if(id==="link-edit"){openDetail("link",popup);return;}
+    if(id==="image-edit"){openDetail("image",popup);return;}
+    if(id==="link-remove"){editor.chain().focus().extendMarkRange("link").unsetLink().run();}
+    else if(id==="link-open"){
+      const href=String(editor.getAttributes("link").href || "");
+      if(/^https?:\/\//i.test(href))window.open(href,"_blank","noopener,noreferrer");
+    } else if(id==="link-copy" || id==="image-copy"){
+      const value=id==="link-copy" ? String(editor.getAttributes("link").href || "") :
+        String(editor.state.doc.nodeAt(popup.pos)?.attrs.src || "");
+      if(value)void navigator.clipboard?.writeText(value).catch(()=>{});
+    } else if(id==="image-download"){
+      const src=String(editor.state.doc.nodeAt(popup.pos)?.attrs.src || "");
+      if(src){const a=document.createElement("a");a.href=src;a.download="document-image";a.rel="noopener noreferrer";a.click();}
+    } else if(id==="copy"){
+      const node=editor.state.doc.nodeAt(popup.pos);
+      if(node)void navigator.clipboard?.writeText(node.textContent).catch(()=>{});
+    } else {
+      if(popup.type==="insert" || popup.type==="slash") insertBlock(editor,id,popup.pos);
+      else {
+        if(popup.block==="cell" && popup.cellPos != null) editor.commands.setTextSelection(popup.cellPos);
+        applyBlockAction(editor,id,popup.pos,popup.cellPos);
+      }
+    }
+    ux.close();
+  };
+  const words=editor.state.doc.textContent.trim().split(/\s+/).filter(Boolean).length;
+  return <main className="app-shell">
+    <header className="topbar">
+      <div className="breadcrumbs"><span className="crumb">Workspace</span><span className="slash">/</span><strong>Product planning notes</strong><span className="tag">Lab</span></div>
+      <div className="top-actions"><span className="save-state"><span className="save-dot"/> Saved locally</span>
+        <button aria-label="Undo" title="Undo" onClick={()=>editor.chain().focus().undo().run()}>↶</button>
+        <button aria-label="Redo" title="Redo" onClick={()=>editor.chain().focus().redo().run()}>↷</button>
+        <button className="outline-toggle" onClick={()=>setOutlineOpen(v=>!v)}>{outlineOpen?"Hide outline":"Outline"}</button>
+      </div>
+    </header>
+    <div className="workspace">
       <section className="page">
-        <div className="page-meta"><span>Workspace</span><span>Updated just now</span></div>
+        <div className="page-meta"><span className="doc-icon">▤</span> Document <span>·</span> Editable playground</div>
         <h1 className="document-title">Product planning notes</h1>
-        <p className="document-hint">Select text or point to a block. Contextual controls will appear beside the content.</p>
-        <div className="editor-frame"><EditorContent editor={editor} /></div>
+        <p className="document-hint">Select text, hover a block, or right-click an image or table cell. Your edits stay in this browser.</p>
+        <div className="editor-frame" onMouseMove={ux.onMouseMove} onMouseLeave={()=>ux.setHover(null)}
+          onContextMenu={ux.onContextMenu} onClick={ux.onClick} onDragOver={ux.onDragOver}
+          onDrop={ux.onDrop} onPointerUp={()=>requestAnimationFrame(ux.trackSelection)}>
+          <EditorContent editor={editor}/>
+        </div>
+        <footer className="page-footer">{words} words <span>·</span> Type / in an empty line to insert</footer>
       </section>
-    </main>
-  );
+      {outlineOpen && <aside className="outline-panel">
+        <div className="outline-title">On this page <button aria-label="Close outline" onClick={()=>setOutlineOpen(false)}>×</button></div>
+        <nav aria-label="Document outline">{outline.map(({text,pos,level})=>
+          <button key={pos} style={{paddingLeft:(level-1)*12+9}} onClick={()=>{
+            editor.chain().focus().setTextSelection(Math.min(pos+1,editor.state.doc.content.size)).scrollIntoView().run();
+          }}>{text || "Untitled heading"}</button>)}</nav>
+        <div className="outline-help">Tip: drag ⠿ to reorder blocks.</div>
+        {comments.length>0 && <section className="comments"><strong>Comments · {comments.length}</strong>
+          {comments.map(c=><p key={c.id}><small>{c.excerpt}</small>{c.text}</p>)}</section>}
+      </aside>}
+    </div>
+    <Gutter hover={ux.hover} onInsert={()=>{if(ux.hover)ux.openGutter("insert",ux.hover);}}
+      onMenu={()=>{if(ux.hover)ux.openGutter("menu",ux.hover);}}
+      onDragStart={event=>{if(ux.hover)ux.onDragStart(event,ux.hover.pos);}}/>
+    {ux.selectionAnchor && !popup && <SelectionToolbar editor={editor} anchor={ux.selectionAnchor}
+      onLink={()=>openDetail("link")} onComment={()=>openDetail("comment")}/>}
+    {popup && (popup.type==="menu" || popup.type==="insert" || popup.type==="slash") &&
+      <PopupMenu editor={editor} popup={popup} onChoose={handleAction} onClose={ux.close}/>}
+    {popup && (popup.type==="link" || popup.type==="image" || popup.type==="comment") &&
+      <DetailPopover key={popup.type+":"+popup.pos} editor={editor} popup={popup} onClose={ux.close}
+        onComment={text=>{const n=editor.state.doc.nodeAt(popup.pos);
+          setComments(list=>[...list,{id:Date.now(),text,excerpt:n?.textContent.slice(0,70) || "Text selection"}]);}}/>}
+  </main>;
 }

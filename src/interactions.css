@@ -1,0 +1,49 @@
+.ux-floating {
+  position:fixed;z-index:60;background:white;border:1px solid #dce3ed;border-radius:10px;
+  box-shadow:0 10px 32px #1c2c4a27;max-width:calc(100vw - 16px);
+}
+.ux-floating.wide {width:310px}
+.selection-bar {display:flex;align-items:center;gap:3px;padding:5px;border-radius:8px;white-space:nowrap}
+.selection-bar button {font-size:12px;min-width:30px;height:31px;background:none;border:0;border-radius:5px;color:#34455c;padding:0 7px}
+.selection-bar button:hover,.selection-bar button.active {background:#ecf3ff;color:#2561bc}
+.selection-bar button[aria-label="B"] {font-weight:750}
+.selection-bar button[aria-label="I"] {font-style:italic}
+.selection-bar button[aria-label="U"] {text-decoration:underline}
+.selection-bar button[aria-label="S"] {text-decoration:line-through}
+.toolbar-divider {width:1px;height:20px;background:#e1e5ee;margin:0 4px}
+.ux-menu {min-width:235px;max-width:min(290px,calc(100vw - 16px));padding:6px;max-height:min(400px,70vh);overflow-y:auto}
+.ux-menu button {width:100%;display:flex;align-items:center;justify-content:space-between;
+  text-align:left;background:transparent;border:0;border-radius:6px;padding:8px 10px;
+  font-size:13px;color:#354051;gap:15px}
+.ux-menu button.is-highlighted,.ux-menu button:hover {background:#eff4fd;color:#2157a7}
+.ux-menu button.destructive {color:#be4c52}
+.ux-menu button.destructive:hover {background:#fff1f1}
+.ux-menu small {font-size:11px;color:#a1a8b1;white-space:nowrap}
+.menu-search {font-size:12px;color:#778397;padding:9px 10px;border-bottom:1px solid #edf0f4;margin-bottom:5px}
+.menu-footer {font-size:10px;color:#9ca5b2;text-align:center;border-top:1px solid #edf0f4;padding:9px 3px 4px;margin-top:5px}
+.empty-results {padding:14px;color:#9aa1ad;font-size:13px}
+.detail-panel {padding:14px;display:flex;flex-direction:column;gap:12px}
+.detail-heading {display:flex;justify-content:space-between;align-items:center;font-size:14px;color:#293c58}
+.detail-heading button {font-size:20px;color:#94a0af;border:0;background:none}
+.detail-panel label {display:flex;flex-direction:column;font-size:12px;color:#738095;gap:6px}
+.detail-panel input:not([type="range"]),.detail-panel textarea {font-size:13px;width:100%;padding:9px;
+  border:1px solid #dfe5ed;border-radius:6px;outline:none;color:#31405a}
+.detail-panel input:focus,.detail-panel textarea:focus {border-color:#4a88de}
+.detail-panel input[type="range"] {accent-color:#4788e9;width:100%}
+.detail-actions {display:flex;justify-content:flex-end;gap:8px}
+.detail-actions button {border:1px solid #e0e6ed;background:#fff;color:#58677b;
+  font-size:12px;padding:8px 14px;border-radius:6px}
+.detail-actions .primary {background:#3e7de0;color:#fff;border-color:#3e7de0}
+.ux-gutter {position:fixed;display:flex;align-items:center;justify-content:flex-end;
+  gap:2px;z-index:30;width:52px;height:32px}
+.ux-gutter button,.ux-gutter span {width:25px;height:29px;border:0;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;background:transparent;color:#a0a9b5;
+  user-select:none;cursor:grab}
+.ux-gutter button {cursor:pointer;font-size:23px;font-weight:300}
+.ux-gutter span {font-size:20px}
+.ux-gutter button:hover,.ux-gutter span:hover,.ux-gutter span:focus-visible {background:#eaf1fc;color:#4279ca}
+@media (max-width: 680px) {
+  .ux-gutter {width:38px;gap:0}
+  .ux-gutter button,.ux-gutter span {width:20px;font-size:18px}
+  .selection-bar {flex-wrap:wrap;white-space:normal;max-width:calc(100vw - 16px)}
+}
