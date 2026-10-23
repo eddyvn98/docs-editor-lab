@@ -1,0 +1,74 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { findSlash } from '../src/slashMatch.ts';
+import { normalizeCrop, fullCrop, dragCrop, cropInsets, isCropped, imageCropStyle, croppedImageStyle } from '../src/cropModel.ts';
+import { cleanTemplate, decodeTemplates, encodeTemplates, templateName, templateExcerpt, TEMPLATE_LIMIT } from '../src/templateModel.ts';
+import { tokenizeCode, normalizeLanguage, codeLanguages } from '../src/codeTokens.ts';
+import { hexColor, blockIndent, blockCSS, calloutIcon, calloutIcons } from '../src/blockStyleModel.ts';
+import { actionsFor, filterInserts } from '../src/logic.ts';
+
+test('slash at a blank paragraph', () => assert.deepEqual(findSlash('/heading'), {query:'heading',from:0,to:8,wholeLine:true}));
+test('slash after ordinary text preserves its prefix', () => assert.deepEqual(findSlash('Keep this /table'), {query:'table',from:10,to:16,wholeLine:false}));
+test('slash at a middle caret preserves the suffix', () => assert.deepEqual(findSlash('before /code after',12), {query:'code',from:7,to:12,wholeLine:false}));
+test('caret offsets use UTF-16 including emoji', () => assert.deepEqual(findSlash('\u{1f600} /table'), {query:'table',from:3,to:9,wholeLine:false}));
+test('URLs and path separators do not trigger the menu', () => { for (const s of ['https://host/code','/one/two','a/b','word/heading']) assert.equal(findSlash(s),null,s); });
+test('tab and nonbreaking space can trigger slash', () => { assert.equal(findSlash('a\t/table').from,2); assert.equal(findSlash('a\u00a0/table').from,2); });
+test('a space-only prefix is treated as a blank line', () => assert.equal(findSlash('   /image ').wholeLine,true));
+test('slash queries accept Unicode letters', () => assert.equal(findSlash('/\u0111o\u1ea1n').query,'\u0111o\u1ea1n'));
+test('bad caret positions are refused', () => { for (const p of [-1,99,NaN,1.3]) assert.equal(findSlash('/text',p),null); });
+test('queries stop at punctuation and newlines', () => { assert.equal(findSlash('/bad!'),null); assert.equal(findSlash('/one\ntwo'),null); });
+test('caret-aware query does not consume unrelated trailing text', () => assert.equal(findSlash('/h2 keep',3).wholeLine,false));
+test('overlong queries are not displayed', () => assert.equal(findSlash('/'+'x'.repeat(41)),null));
+
+test('full crop is the backward-compatible default', () => { for (const x of [null,undefined,42,[],'bad',{}]) assert.deepEqual(normalizeCrop(x),fullCrop); });
+test('crop values are finite and bounded', () => assert.deepEqual(normalizeCrop({x:-5,y:300,width:150,height:5}),{x:0,y:90,width:100,height:10}));
+test('crop NaN and infinity use defaults', () => assert.deepEqual(normalizeCrop({x:NaN,y:Infinity,width:Infinity,height:NaN}),fullCrop));
+test('moving a crop stops at original image edges', () => assert.deepEqual(dragCrop({x:10,y:10,width:50,height:50},100,100,'move'),{x:50,y:50,width:50,height:50}));
+test('resizing keeps the original crop origin', () => assert.deepEqual(dragCrop({x:30,y:20,width:50,height:50},100,100,'resize'),{x:30,y:20,width:70,height:80}));
+test('resizing cannot invert the crop', () => assert.deepEqual(dragCrop({x:20,y:20,width:50,height:50},-100,-100,'resize'),{x:20,y:20,width:10,height:10}));
+test('crop reset does not discard the original URL or need canvas', () => { assert.equal(isCropped(fullCrop),false); assert.equal(isCropped({x:0,y:0,width:50,height:100}),true); });
+test('crop aspect ratio follows original image ratio', () => assert.equal(imageCropStyle({x:0,y:0,width:50,height:100},2).aspectRatio,'1'));
+test('cropped image positioning compensates for viewport size', () => { const css=croppedImageStyle({x:25,y:10,width:50,height:50}); assert.equal(css.width,'200%');assert.equal(css.left,'-50%');assert.equal(css.top,'-20%'); });
+test('crop serialization has valid insets', () => assert.equal(cropInsets({x:10,y:20,width:70,height:60}),'20% 20% 20% 10%'));
+
+const paragraph = {type:'paragraph',attrs:{blockId:'old',textAlign:'right'},content:[{type:'text',text:'Hello',marks:[{type:'comment',attrs:{commentId:'old'}},{type:'bold'}]}]};
+const record = {id:'one',name:'Example',content:[paragraph],createdAt:'2026-10-23',uses:0};
+test('template copies lose source block identities', () => assert.equal(cleanTemplate(paragraph).attrs.blockId,undefined));
+test('template copies lose comment marks but keep formatting', () => assert.deepEqual(cleanTemplate(paragraph).content[0].marks,[{type:'bold'}]));
+test('template cleanup never mutates its source', () => { cleanTemplate(paragraph);assert.equal(paragraph.attrs.blockId,'old');assert.equal(paragraph.content[0].marks.length,2); });
+test('template encode/decode retains structure and formatting', () => { const item=decodeTemplates(encodeTemplates([record]))[0];assert.equal(item.content[0].attrs.textAlign,'right');assert.equal(item.name,'Example'); });
+test('template names are bounded and normalized', () => { assert.equal(templateName('  My   block '),'My block');assert.equal(templateName('x'.repeat(90)).length,80); });
+test('template preview is plain text', () => assert.equal(templateExcerpt([{type:'paragraph',content:[{type:'text',text:'<script>not executed</script>'}]}]),'<script>not executed</script>'));
+test('empty template library is supported', () => assert.deepEqual(decodeTemplates(null),[]));
+test('corrupt libraries fail rather than being silently overwritten', () => { for (const raw of ['broken','{}','[{"id":"a"}]']) assert.throws(()=>decodeTemplates(raw)); });
+test('duplicate template identities are refused', () => assert.throws(()=>decodeTemplates(JSON.stringify([record,record]))));
+test('template library count is bounded', () => assert.throws(()=>encodeTemplates(Array.from({length:TEMPLATE_LIMIT+1},(_,i)=>({...record,id:String(i)})))));
+test('oversized template libraries fail safely', () => assert.throws(()=>decodeTemplates(' '.repeat(1000001))));
+test('template nesting depth is bounded', () => { let n={type:'paragraph'};for(let i=0;i<65;i++)n={type:'blockquote',content:[n]};assert.throws(()=>cleanTemplate(n)); });
+
+test('unsupported code languages remain plain text', () => { assert.equal(normalizeLanguage('unknown'),'plaintext');assert.deepEqual(tokenizeCode('return 42','unknown'),[]); });
+test('common language aliases resolve', () => { assert.equal(normalizeLanguage('JS'),'javascript');assert.equal(normalizeLanguage('ts'),'typescript');assert.equal(normalizeLanguage('py'),'python'); });
+test('supported code language identifiers are unique', () => assert.equal(new Set(codeLanguages.map(([id])=>id)).size,codeLanguages.length));
+test('JavaScript keyword/string/comment ranges are disjoint', () => { const source='const x = "return"; // hi';const t=tokenizeCode(source,'js');assert.deepEqual(t.map(x=>x.kind),['keyword','string','comment']);for(let i=1;i<t.length;i++)assert.ok(t[i].from>=t[i-1].to); });
+test('a quote escape does not prematurely end a string', () => { const source='"a\\\"b"'; assert.equal(tokenizeCode(source,'json')[0].to,source.length); });
+test('JSON property names and numbers are colored safely', () => assert.deepEqual(tokenizeCode('{"count": 5, "done": true}','json').map(t=>t.kind),['property','number','property','keyword']));
+test('Python triple-quoted strings remain one token', () => { const s='"""a\nb"""';assert.deepEqual(tokenizeCode(s,'python'),[{from:0,to:s.length,kind:'string'}]); });
+test('SQL keywords are case insensitive', () => assert.equal(tokenizeCode('select x from t','sql').filter(t=>t.kind==='keyword').length,2));
+test('unclosed comments do not produce invalid ranges', () => { const s='/* open';assert.deepEqual(tokenizeCode(s,'css'),[{from:0,to:s.length,kind:'comment'}]); });
+test('HTML is colored, never interpreted or inserted', () => { const s='<script>danger()</script>';const t=tokenizeCode(s,'html');for(const r of t)assert.ok(r.from>=0&&r.to<=s.length); });
+test('huge code blocks avoid expensive highlighting', () => assert.deepEqual(tokenizeCode('a'.repeat(100001),'js'),[]));
+test('numeric characters within identifiers remain unstyled', () => assert.equal(tokenizeCode('item123','js').length,0));
+test('every emitted token is within its source', () => { for(const s of ['','"','/*','\ud83d\ude00','\\','`unterminated',"'''",'<','123.4e-5'])for(const [lang] of codeLanguages)for(const t of tokenizeCode(s,lang))assert.ok(t.from>=0&&t.to>t.from&&t.to<=s.length); });
+
+test('block colors reject CSS code and URLs', () => { for(const c of ['url(x)','red','expression(x)','#fff','</style>'])assert.equal(hexColor(c),null);assert.equal(hexColor('#ABCDEF'),'#abcdef'); });
+test('block indentation stays in a supported range', () => { assert.equal(blockIndent(99),8);assert.equal(blockIndent(-2),0);assert.equal(blockIndent(NaN),0);assert.equal(blockIndent(2.8),2); });
+test('callout icons cannot contain markup', () => assert.equal(calloutIcon('<img>'),calloutIcons[0]));
+test('block style output contains validated properties only', () => assert.deepEqual(blockCSS({blockBackground:'url(x)',blockTextColor:'#123456',blockIndent:2}),{color:'#123456',marginInlineStart:'min(3em, 35%)'}));
+test('templates can be found from the slash menu', () => assert.deepEqual(filterInserts('template').map(x=>x.id),['templates']));
+test('callout and text offer block styling, images do not', () => { assert.ok(actionsFor('callout').some(x=>x.id==='block-style'));assert.ok(!actionsFor('image').some(x=>x.id==='block-style')); });
+test('image context menus offer crop without text commands', () => { assert.ok(actionsFor('image').some(x=>x.id==='image-crop'));assert.ok(!actionsFor('image').some(x=>x.id==='h1')); });
+test('new menu actions never duplicate an id', () => { for(const type of ['paragraph','heading','callout','codeBlock','table','image','columns','taskItem']){const a=actionsFor(type);assert.equal(new Set(a.map(x=>x.id)).size,a.length);} });
+
+test('concurrent toggle and page-break insertions stay discoverable', () => {assert.deepEqual(filterInserts('toggle').map(x=>x.id),['toggle']);assert.deepEqual(filterInserts('page break').map(x=>x.id),['page-break']);});
+test('toggle and page-break context actions are retained', () => {assert.ok(actionsFor('toggleBlock').some(x=>x.id==='template-save'));assert.ok(actionsFor('pageBreak').some(x=>x.label==='Delete page break'));});
+test('original image preview coexists with non-destructive crop', () => {const ids=actionsFor('image').map(x=>x.id);assert.ok(ids.includes('image-preview')&&ids.includes('image-crop'));});

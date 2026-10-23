@@ -1,4 +1,4 @@
-import { Node, getSchema, mergeAttributes } from '@tiptap/core';
+import { getSchema } from '@tiptap/core';
 import type { JSONContent } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -15,6 +15,9 @@ import { DocumentImage } from './DocumentImage';
 import { SearchHighlights } from './SearchHighlights';
 import { HeadingFolding } from './HeadingFolding';
 import { DocumentAppearance } from './DocumentAppearance';
+import { BlockAppearance } from './BlockAppearance';
+import { CalloutBlock } from './CalloutBlock';
+import { CodeBlockTools } from './CodeBlockTools';
 import { ToggleBlock, PageBreak } from './features/AdvancedBlocks';
 import { starterContent } from './sampleContent';
 import { validateDocument } from './contentIO';
@@ -23,19 +26,14 @@ import { SESSION_KEY } from './session';
 export { starterContent } from './sampleContent';
 export const STORAGE_KEY = DOCUMENT_KEY;
 export let startupIssue = '';
-const Callout = Node.create({
-  name: 'callout', group: 'block', content: 'block+', defining: true,
-  parseHTML() { return [{ tag: 'aside[data-type="callout"]' }]; },
-  renderHTML({ HTMLAttributes }) { return ['aside', mergeAttributes({ 'data-type': 'callout', class: 'callout' }, HTMLAttributes), 0]; },
-});
 export const extensions = [
   StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: false }),
   Link.configure({ openOnClick: false, autolink: true }),
-  DocumentImage.configure({ inline: false, allowBase64: true }), Callout,
+  DocumentImage.configure({ inline: false, allowBase64: true }), CalloutBlock,
   TableKit.configure({ table: { resizable: true } }), TaskList, TaskItem.configure({ nested: true }),
   TextAlign.configure({ types: ['paragraph', 'heading'] }), Highlight.configure({ multicolor: true }),
-  TextStyleKit, CommentMark, Column, Columns, BlockIdentity, SearchHighlights, HeadingFolding, DocumentAppearance,
-  ToggleBlock, PageBreak,
+  TextStyleKit, CommentMark, Column, Columns, BlockIdentity, SearchHighlights, HeadingFolding,
+  DocumentAppearance, BlockAppearance, CodeBlockTools, ToggleBlock, PageBreak,
 ];
 export function readLocalDocument(): string | JSONContent {
   startupIssue = '';

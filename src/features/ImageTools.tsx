@@ -17,7 +17,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 }
 export function ImageTools({ editor, target, onClose }: { editor: Editor; target: ImageTarget; onClose: () => void }) {
   const pos = target.id ? positionById(editor, target.id) : target.pos;
-  const node = pos !== null ? editor.state.doc.nodeAt(pos) : null;
+  const node = pos !== null && pos >= 0 && pos < editor.state.doc.content.size ? editor.state.doc.nodeAt(pos) : null;
   const [original] = useState(() => node?.type.name === "image" ? String(node.attrs.src || "") : "");
   const [crop, setCrop] = useState<Crop>({ ...FULL_CROP });
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
@@ -45,10 +45,11 @@ export function ImageTools({ editor, target, onClose }: { editor: Editor; target
       if (result.length > 2_000_000) throw new Error("The cropped image is too large for local storage. Choose a smaller crop or use a smaller source image.");
       if (!alive.current || editor.isDestroyed) return;
       const currentPos = target.id ? positionById(editor, target.id) : target.pos;
-      const currentNode = currentPos !== null ? editor.state.doc.nodeAt(currentPos) : null;
+      const currentNode = currentPos !== null && currentPos >= 0 && currentPos < editor.state.doc.content.size ? editor.state.doc.nodeAt(currentPos) : null;
       if (currentPos === null || currentNode?.type.name !== "image" || currentNode.attrs.src !== original) throw new Error("The original image changed or was removed. Reopen image tools.");
       if (!editor.isEditable) throw new Error("Return to editing mode to apply the crop.");
-      editor.view.dispatch(editor.state.tr.setNodeMarkup(currentPos, undefined, { ...currentNode.attrs, src: result }));
+      // A raster replacement must not inherit a viewport crop for the previous source.
+      editor.view.dispatch(editor.state.tr.setNodeMarkup(currentPos, undefined, { ...currentNode.attrs, src: result, crop: null, imageRatio: canvas.width / canvas.height }));
       onClose(); editor.commands.focus();
     } catch (cause) { if (alive.current) setError(cause instanceof Error ? cause.message : "Image could not be cropped."); }
     finally { if (alive.current) setBusy(false); }

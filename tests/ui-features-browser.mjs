@@ -11,9 +11,9 @@ try {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(process.env.EDITOR_URL || 'http://127.0.0.1:5173');
-    await page.getByRole('toolbar', { name: 'Document formatting', exact: true }).waitFor();
+    await page.getByRole('button', { name: 'Document templates', exact: true }).waitFor();
     const initial = await page.locator('.ProseMirror').innerText();
-    await page.getByRole('button', { name: 'Insert template', exact: true }).click();
+    await page.getByRole('button', { name: 'Document templates', exact: true }).click();
     const gallery = page.getByRole('dialog', { name: 'Template gallery' });
     await gallery.getByRole('button', { name: 'Insert Meeting notes', exact: true }).click();
     await page.locator('.ProseMirror h2').filter({ hasText: 'Meeting notes' }).waitFor();
@@ -43,7 +43,7 @@ try {
     await page.getByRole('button', { name: 'Undo', exact: true }).click();
     assert.equal(await image.getAttribute('src'), original);
 
-    await page.getByRole('button', { name: 'Insert template', exact: true }).click();
+    await page.getByRole('button', { name: 'Document templates', exact: true }).click();
     await page.keyboard.press('Escape');
     assert.equal(await page.getByRole('dialog').count(), 0);
     assert.deepEqual(errors, []);
