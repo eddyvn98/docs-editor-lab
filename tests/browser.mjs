@@ -87,17 +87,17 @@ async function run(){
     await page.evaluate(()=>window.scrollTo(0,220));
     const anchored=await page.locator(".ux-menu").boundingBox();
     assert.ok(anchored && Number.isFinite(anchored.y));
-    const source=page.locator(".ProseMirror > p").first();
-    const destination=page.locator(".ProseMirror > h2").first();
+    const source=page.locator(".ProseMirror > h2").first();
+    const destination=page.locator(".ProseMirror > p").first();
     await source.hover();
     const grip=page.getByRole("button",{name:"Drag or open block actions"});
     const from=await grip.boundingBox(),to=await destination.boundingBox();
     assert.ok(from&&to,"grip and target are visible");
     await page.mouse.move(from.x+from.width/2,from.y+from.height/2);
     await page.mouse.down();
-    await page.mouse.move(to.x+18,to.y+to.height*0.75,{steps:16});
+    await page.mouse.move(to.x+18,to.y+to.height*0.25,{steps:16});
     await page.mouse.up();
-    assert.equal(await destination.evaluate(el=>el.previousElementSibling?.tagName),"H1","drag moved paragraph after heading");
+    assert.equal(await source.evaluate(el=>el.previousElementSibling?.tagName),"H1","drag moved heading above duplicate paragraphs");
     assert.deepEqual(errors,[]);
     await context.close();console.log("PASS Chromium width="+width);
   }
