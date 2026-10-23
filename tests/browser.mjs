@@ -87,12 +87,13 @@ async function run(){
     await page.evaluate(()=>window.scrollTo(0,220));
     const anchored=await page.locator(".ux-menu").boundingBox();
     assert.ok(anchored && Number.isFinite(anchored.y));
+    await page.keyboard.press("Escape");
     await page.evaluate(()=>window.scrollTo(0,0));
     const source=page.locator(".ProseMirror > h2").first();
     const destination=page.locator(".ProseMirror > p").first();
     await source.hover();
-    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     const grip=page.getByRole("button",{name:"Drag or open block actions"});
+    if(!(await grip.isVisible())){await page.mouse.move(0,90);await source.hover();}
     const from=await grip.boundingBox(),to=await destination.boundingBox();
     assert.ok(from&&to&&to.y>=0&&to.y<860,"grip and target are visible");
     await page.mouse.move(from.x+from.width/2,from.y+from.height/2);
