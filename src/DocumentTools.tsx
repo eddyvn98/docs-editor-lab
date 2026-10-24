@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import type { JSONContent } from '@tiptap/core';
-import { Download, History, MoreHorizontal, Search, Upload, X } from 'lucide-react';
+import { Download, FileText, History, MoreHorizontal, Search, Upload, X } from 'lucide-react';
+import { starterContent } from './sampleContent';
 import { isDocument } from './documentUtils';
 import { validateDocument, sanitizeHTML } from './contentIO';
 import { normalizeComments } from './comments';
@@ -71,7 +72,15 @@ export function DocumentTools({ editor, title, comments, onTitle, onComments }: 
     }}><button role="menuitem" onClick={() => { setOpen(false); window.dispatchEvent(new Event('docs-open-search')); }}><Search size={16}/>{t('Find and replace')}<kbd>Ctrl/Cmd F</kbd></button>
       <button role="menuitem" onClick={() => { setOpen(false); setPanel('export'); }}><Download size={16}/>{t('Export')}</button>
       <button role="menuitem" disabled={busy || !editor.isEditable} onClick={() => { setOpen(false); fileRef.current?.click(); }}><Upload size={16}/>{busy ? t('Importing...') : t('Import')}</button>
-      <button role="menuitem" onClick={() => { setOpen(false); setPanel('versions'); }}><History size={16}/>{t('Version history')}</button></div>}
+      <button role="menuitem" onClick={() => { setOpen(false); setPanel('versions'); }}><History size={16}/>{t('Version history')}</button>
+      <button role="menuitem" onClick={() => {
+        setOpen(false);
+        if (window.confirm('Nạp toàn bộ dữ liệu mẫu 21 Block Lark Docs (Full Parity)?')) {
+          editor.chain().setContent(starterContent, { errorOnInvalidContent: true }).setMeta('docs-direct-edit', true).run();
+          onTitle('QA - Docs parity checklist (Project Atlas)');
+          setMessage('Đã nạp toàn bộ 21 block mẫu Lark Docs!');
+        }
+      }}><FileText size={16}/>{t('Nạp toàn bộ 21 block mẫu (Demo)')}</button></div>}
     <input ref={fileRef} hidden type="file" accept=".json,.html,.htm" onChange={event => { void importFile(event.target.files?.[0]); }}/>
     {message && !panel && <div className="docs-operation-notice" role="status">{message}<button aria-label="Dismiss document tools notice" onClick={() => setMessage('')}><X size={14}/></button></div>}
     {panel === 'export' && <ShareDialog editor={editor} title={title} comments={comments} onClose={() => setPanel(null)}/>}
