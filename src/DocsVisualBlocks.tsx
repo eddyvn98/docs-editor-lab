@@ -2,14 +2,22 @@ import { Node, mergeAttributes } from '@tiptap/core';
 import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import type { NodeViewProps } from '@tiptap/react';
 import { useEffect, useState } from 'react';
-function Visual({node,editor,updateAttributes}:NodeViewProps){
+import { closeHistory } from '@tiptap/pm/history';
+function Visual({node,editor,getPos}:NodeViewProps){
   const name=node.type.name, editable=editor.isEditable;
   const [,refresh]=useState(0);
   useEffect(()=>{const updated=()=>refresh(x=>x+1);editor.on('transaction',updated);return ()=>{editor.off('transaction',updated);};},[editor]);
   const [draft,setDraft]=useState(String(node.attrs.source||''));
   // Undo, redo, linked updates and document replacement must update the editor draft.
   useEffect(()=>{setDraft(String(node.attrs.source||''));},[node.attrs.source]);
-  const applySource=()=>{if(editable)updateAttributes({source:draft});};
+  const applySource=()=>{
+    const pos=getPos();
+    if(!editable||typeof pos!=='number')return;
+    const current=editor.state.doc.nodeAt(pos);
+    if(current?.type.name!==name||current.attrs.blockId!==node.attrs.blockId||String(current.attrs.source||'')===draft)return;
+    // Keep source changes in their own undo group, separate from block insertion.
+    editor.view.dispatch(closeHistory(editor.state.tr).setNodeMarkup(pos,undefined,{...current.attrs,source:draft}));
+  };
   const headings:{text:string;pos:number;level:number}[]=[];
   editor.state.doc.descendants((child,pos)=>{if(child.type.name==='heading') headings.push({text:child.textContent||'Untitled heading',pos,level:child.attrs.level||1});});
   const timeline=String(node.attrs.source||'').split('\n').map(v=>v.trim()).filter(Boolean);
