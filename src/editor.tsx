@@ -30,6 +30,7 @@ import { Equation, InlineEquation } from './docs-content/Equation';
 import { SyncedBlock } from './docs-content/SyncedBlock';
 import { Suggestions, SuggestionMark } from './docs-content/Suggestions';
 import { ClipboardClean } from './docs-content/ClipboardClean';
+import { SlashPlaceholder } from './docs-content/SlashPlaceholder';
 import { starterContent } from './sampleContent';
 import { validateDocument } from './contentIO';
 import { DOCUMENT_KEY, RECOVERY_KEY } from './storage';
@@ -48,7 +49,7 @@ export const extensions = [
   // Keep the legacy schema for existing documents; Sheets is not offered in the Docs UI.
   InlineSheet, DocsToc, DocsTimeline, DocsMermaid,
   DocumentMetadata, BlockSelectionExtension, MediaBlock, ImageGallery, Equation, InlineEquation,
-  SyncedBlock, SuggestionMark, Suggestions, ClipboardClean,
+  SyncedBlock, SuggestionMark, Suggestions, ClipboardClean, SlashPlaceholder,
 ];
 export function readLocalDocument(): string | JSONContent {
   startupIssue = ''; let raw: string | null = null;

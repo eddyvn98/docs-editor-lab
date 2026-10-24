@@ -7,6 +7,9 @@ body {margin:0;min-width:320px}
 button,input,textarea {font:inherit}
 button {cursor:pointer}
 .app-shell {min-height:100vh}
+.docs-shell .ProseMirror-focused p[data-docs-placeholder]::before {
+  content: attr(data-docs-placeholder); float: left; height: 0; color: var(--docs-muted); opacity: .78; pointer-events: none;
+}
 .topbar {
   height:58px;display:flex;align-items:center;justify-content:space-between;gap:16px;
   padding:0 26px;background:#fff;border-bottom:1px solid #e9edf1;position:sticky;top:0;z-index:10;

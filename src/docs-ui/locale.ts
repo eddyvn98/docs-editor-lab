@@ -34,6 +34,7 @@ const vi: Record<string, string> = {
   Send: 'G\u1eedi', Delete: 'X\u00f3a', Edit: 'S\u1eeda', All: 'T\u1ea5t c\u1ea3', Open: 'Ch\u01b0a gi\u1ea3i quy\u1ebft',
   'Send a copy': 'G\u1eedi b\u1ea3n sao', 'Download JSON': 'T\u1ea3i b\u1ea3n JSON', 'Download HTML': 'T\u1ea3i b\u1ea3n HTML', 'Print / PDF': 'In / PDF',
   'Search blocks': 'T\u00ecm kh\u1ed1i n\u1ed9i dung', 'Insert a block': 'Ch\u00e8n n\u1ed9i dung',
+  "Type '/' for commands": "Nh\u1eadp '/' cho c\u00e1c l\u1ec7nh",
   'Basic blocks': 'N\u1ed9i dung c\u01a1 b\u1ea3n', Media: '\u0110a ph\u01b0\u01a1ng ti\u1ec7n', Layout: 'B\u1ed1 c\u1ee5c', Advanced: 'N\u00e2ng cao',
   Text: 'V\u0103n b\u1ea3n', 'Heading 1': 'Ti\u00eau \u0111\u1ec1 1', 'Heading 2': 'Ti\u00eau \u0111\u1ec1 2', 'Heading 3': 'Ti\u00eau \u0111\u1ec1 3',
   'Heading 4': 'Ti\u00eau \u0111\u1ec1 4', 'Heading 5': 'Ti\u00eau \u0111\u1ec1 5', 'Heading 6': 'Ti\u00eau \u0111\u1ec1 6',

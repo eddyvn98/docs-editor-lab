@@ -68,6 +68,12 @@ for (const width of [1365, 390]) {
       await page.goto(url, { waitUntil: 'networkidle' });
       const editor = page.locator('.ProseMirror');
       await editor.waitFor({ state: 'visible' });
+      const initialEmptyParagraph = editor.locator(':scope > p').last();
+      await initialEmptyParagraph.click();
+      await page.waitForFunction(() => document.querySelector('.ProseMirror > p:last-child')?.hasAttribute('data-docs-placeholder'));
+      const placeholder = await initialEmptyParagraph.getAttribute('data-docs-placeholder');
+      assert.match(placeholder || '', /\/.*(commands|l\u1ec7nh)/i, 'Empty focused paragraphs should explain the slash command shortcut');
+      assert.notEqual(await initialEmptyParagraph.evaluate(node => getComputedStyle(node, '::before').content), 'none');
       await selectParagraph(page);
       const floating = page.locator('.docs-selection-toolbar');
       const toolbar = floating.getByRole('toolbar', { name: 'Selection formatting' });
