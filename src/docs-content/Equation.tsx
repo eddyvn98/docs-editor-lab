@@ -19,6 +19,8 @@ function EquationView({ node, editor, updateAttributes, selected }: NodeViewProp
   useEditorPulse(editor); useDocsLocale();
   const block = node.type.name === 'equation', [open, setOpen] = useState(!node.attrs.latex), [source, setSource] = useState(String(node.attrs.latex || ''));
   useEffect(() => { if (!editor.isEditable) setOpen(false); }, [editor.isEditable]);
+  // Sync an unopened draft after Undo/Redo or a programmatic document restore.
+  useEffect(() => { if (!open) setSource(String(node.attrs.latex || '')); }, [node.attrs.latex, open]);
   const close = () => { setOpen(false); editor.view.focus(); };
   const save = () => { if (editor.isEditable) updateAttributes({ latex: source.slice(0, 10_000) }); close(); };
   return <NodeViewWrapper as={block ? 'div' : 'span'} className={`${block ? 'docs-equation' : 'docs-inline-equation'} ${selected ? 'is-selected' : ''}`} data-type={node.type.name} data-block-id={node.attrs.blockId} contentEditable={false}>

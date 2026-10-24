@@ -102,7 +102,8 @@ export function useEditorUX(editor: Editor | null) {
     const target = event.target as HTMLElement;
     if (target.closest('[data-node-controls],input,select,textarea,button')) return;
     const cell = target.closest<HTMLElement>('td,th'), link = target.closest('a[href]');
-    const candidate = cell?.closest('table') || target.closest('.image-figure') || (!link && target.closest('li[data-type="taskItem"]')) || target;
+    const candidate = cell?.closest('table') || target.closest('.image-figure') ||
+      (!link && target.closest('blockquote,aside[data-type="callout"],[data-type="toggleBlock"],.toggle-block,li[data-type="taskItem"]')) || target;
     const found = blockFromDOM(editor, candidate, true); if (!found) return;
     event.preventDefault(); let cellPos: number | undefined;
     if (cell) {

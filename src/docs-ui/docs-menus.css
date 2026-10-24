@@ -75,3 +75,19 @@
 .docs-batch-context p { font-size:11px; color:var(--docs-muted); padding:6px; }
 .docs-batch-bar { overflow:visible; }
 @media(max-width:420px) { .docs-batch-bar { gap:0; } .docs-batch-bar button { width:27px; } .docs-batch-bar strong { margin:0 4px 0 0; } }
+
+/* Keep formatting controls off the document text on touch-sized screens. */
+@media (max-width:680px) {
+  .ux-floating.docs-selection-toolbar {
+    top:auto!important;
+    bottom:max(12px,env(safe-area-inset-bottom))!important;
+    left:8px!important;
+    right:8px!important;
+    width:auto;
+    max-width:none;
+    max-height:min(58dvh,320px)!important;
+    overflow-y:auto;
+    touch-action:pan-y;
+  }
+  .docs-selection-toolbar .selection-controls { max-width:100%; }
+}

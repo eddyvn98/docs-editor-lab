@@ -24,14 +24,16 @@ export function useDocumentState(editor: Editor | null, startupError = "") {
     if (result.ok) { dirty.current = false; setStatus("Saved locally"); setNotice(""); }
     else { setStatus("Not saved"); setNotice(result.error); }
   }, [editor]);
-  const replaceDocument = useCallback((doc: JSONContent, nextTitle: string) => {
+  const replaceDocument = useCallback((doc: JSONContent, nextTitle: string, nextComments = data.current.comments) => {
     if (!editor || editor.isDestroyed) return false;
     data.current.blocked = false;
     setBlocked(false);
     setNotice("");
-    const result = saveSession(doc, data.current.comments, nextTitle);
+    const result = saveSession(doc, nextComments, nextTitle);
     if (!result.ok) { setStatus("Not saved"); setNotice(result.error); return false; }
     dirty.current = false;
+    data.current = { comments: nextComments, title: nextTitle, blocked: false };
+    setComments(nextComments);
     setTitle(nextTitle);
     setStatus("Saved locally");
     setRevision(value => value + 1);

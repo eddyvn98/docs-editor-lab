@@ -13,7 +13,6 @@ import { useEditorPulse } from '../useEditorPulse';
 import { isSuggesting } from '../docs-content/Suggestions';
 import { suggestions } from '../docs-content/reviewModel';
 import { DocumentHero } from './DocumentHero';
-import { starterContent } from '../sampleContent';
 import { PageSettings } from './PageSettings';
 import { ShareDialog } from './ShareDialog';
 import { BlockBatchBar } from './BlockBatchBar';
@@ -59,24 +58,13 @@ export function DocsShell({ editor, state, view, patchView, outlineOpen, onOutli
         {!readOnly && <><div className="docs-undo-group"><button className="docs-icon-button" aria-label="Undo" title="Undo" disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()}><Undo2 size={17}/></button><button className="docs-icon-button" aria-label="Redo" title="Redo" disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()}><Redo2 size={17}/></button></div>
           <button className="docs-icon-button docs-insert-trigger" aria-label="Insert block" title={t('Insert')} onPointerDown={event => event.preventDefault()} onClick={onInsert}><Plus size={18}/></button>
           <button className="docs-icon-button docs-template-trigger" aria-label="Document templates" title={t('Templates')} onClick={onTemplates}><LayoutTemplate size={18}/></button>
-          <button className="docs-icon-button docs-demo-trigger" aria-label="Nạp toàn bộ 21 block mẫu (Demo)" title="Nạp toàn bộ 21 block mẫu (Demo)" onClick={() => {
-            if (window.confirm('Nạp lại toàn bộ 21 block mẫu Lark Docs để hiển thị đầy đủ trên màn hình?')) {
-              try {
-                const loaded = editor.chain().setContent(starterContent).setMeta('docs-direct-edit', true).run();
-                if (!loaded || !state.replaceDocument(editor.getJSON(), 'QA - Docs parity checklist (Project Atlas)')) {
-                  state.setNotice('Không thể lưu bộ mẫu. Hãy kiểm tra trạng thái lưu trên thanh công cụ rồi thử lại.');
-                }
-              } catch (error) {
-                state.setNotice(`Không thể nạp bộ mẫu: ${error instanceof Error ? error.message : 'lỗi không xác định'}. Tài liệu hiện tại vẫn được giữ nguyên.`);
-              }
-            }
-          }}><FileText size={18}/></button></>}
+</>}
         <button className="docs-icon-button docs-search-trigger" aria-label="Search document" title={t('Search document')} onClick={() => window.dispatchEvent(new Event('docs-open-search'))}><Search size={18}/></button>
         <button className="docs-share-button docs-primary" aria-label="Share document copy" onClick={() => setShare(true)}><Share2 size={16}/><span>{t('Share')}</span></button>
         <ModeMenu editor={editor} readOnly={readOnly} onReadOnly={value => patchView({ mode: value ? 'read' : 'edit' })} onReview={review}/>
         <button className="docs-icon-button docs-comments-trigger" aria-label="Toggle comments" title={t('Comments')} aria-expanded={commentsOpen && !view.focus} aria-controls="docs-comments" onClick={onComments}><MessageSquare size={18}/>{count + reviewCount > 0 && <span className="docs-count">{count + reviewCount}</span>}</button>
         <PageSettings view={view} onChange={patchView} onHelp={onHelp}/>
-        <DocumentTools editor={editor} revision={state.revision} title={state.title} comments={state.comments} onTitle={state.setTitle} onComments={state.setComments}/>
+        <DocumentTools editor={editor} revision={state.revision} title={state.title} comments={state.comments} onTitle={state.setTitle} onComments={state.setComments} onReplace={state.replaceDocument}/>
       </div>
     </header>
     {notice}<FindBar editor={editor}/>

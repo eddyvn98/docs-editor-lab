@@ -35,7 +35,9 @@ export function duplicateBlock(editor: Editor, pos: number) {
   const end = rangeEnd(editor, pos, node), copies: PMNode[] = [];
   editor.state.doc.slice(pos, end).content.forEach(child => { const clean = freshNode(editor, child); if (clean) copies.push(clean); });
   if (!copies.length) return false;
-  editor.view.dispatch(closeHistory(editor.state.tr).insert(end, copies).scrollIntoView()); return true;
+  const tr = closeHistory(editor.state.tr).insert(end, copies).scrollIntoView();
+  tr.setSelection(Selection.near(tr.doc.resolve(Math.min(end + 1, tr.doc.content.size))));
+  editor.view.dispatch(tr); editor.view.focus(); return true;
 }
 export function moveBlock(editor: Editor, from: number, to: number) {
   if (!editor.isEditable) return false;
@@ -47,7 +49,7 @@ export function moveBlock(editor: Editor, from: number, to: number) {
   try {
     const content = doc.slice(from, end).content, tr = closeHistory(editor.state.tr).delete(from, end), destination = tr.mapping.map(to, -1);
     tr.insert(destination, content); tr.doc.check(); tr.setSelection(Selection.near(tr.doc.resolve(Math.min(destination + 1, tr.doc.content.size))));
-    editor.view.dispatch(tr.scrollIntoView()); return true;
+    editor.view.dispatch(tr.scrollIntoView()); editor.view.focus(); return true;
   } catch { return false; }
 }
 export function moveSibling(editor: Editor, pos: number, direction: -1 | 1) {
@@ -77,7 +79,7 @@ export function insertBlock(editor: Editor, id: Action, pos: number, slash = fal
   if (!editor.isEditable) return false;
   const previous = editor.state.doc.nodeAt(pos); if (!previous) return false;
   if (!conversionIds.has(id)) return insertNewBlock(editor, id, 3, 3, pos, true);
-  const parts = textParagraphs(previous, slash), draft = blankBlock(id) as JSONContent | null;
+  const parts = textParagraphs(previous, slash), draft = blankBlock(id, 3, 3, true) as JSONContent | null;
   if (!parts || !draft) return false;
   const inline = parts.flatMap((paragraph, index) => [...(index ? [{ type: 'hardBreak' }] : []), ...(paragraph.content || [])]);
   if (id === 'paragraph' || /^h[1-9]$/.test(id)) draft.content = inline;

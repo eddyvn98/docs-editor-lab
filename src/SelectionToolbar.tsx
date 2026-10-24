@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Editor } from '@tiptap/react';
-import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, CheckSquare, Code2, Highlighter, Italic, Link2, List, ListOrdered, MessageSquare, MoreHorizontal, Palette, Strikethrough, Underline } from 'lucide-react';
+import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, CheckSquare, Code2, Highlighter, Italic, Link2, List, ListOrdered, MessageSquare, MoreHorizontal, Palette, Strikethrough, Underline, X } from 'lucide-react';
 import type { Anchor } from './targets';
 import { Anchored } from './Anchored';
 import { requestDocs } from './docsEvents';
@@ -10,8 +10,14 @@ const backgrounds = ['#ffffff','#f2f3f5','#ffe2e0','#ffedcf','#fff5b3','#d9f5d6'
 export function SelectionToolbar({ editor, anchor, onLink, onComment }: { editor: Editor; anchor: Anchor; onLink: () => void; onComment: () => void }) {
   useDocsLocale();
   const [panel, setPanel] = useState<'color' | 'more' | null>(null);
-  const restore = () => { if (anchor.from !== undefined && anchor.to !== undefined && anchor.to <= editor.state.doc.content.size) editor.commands.setTextSelection({ from: anchor.from, to: anchor.to }); };
-  const run = (action: () => void) => { if (!editor.isEditable) return; restore(); action(); };
+  const restore = () => {
+    if (anchor.from === undefined || anchor.to === undefined || anchor.from >= anchor.to || anchor.to > editor.state.doc.content.size) return false;
+    // Re-focus before dispatching selection so popovers keep their saved range.
+    editor.view.focus();
+    return editor.commands.setTextSelection({ from: anchor.from, to: anchor.to });
+  };
+  const run = (action: () => void) => { if (editor.isEditable && restore()) action(); };
+  const dismiss = () => { setPanel(null); editor.chain().focus().setTextSelection(anchor.to ?? editor.state.selection.to).run(); };
   const button = (label: string, Icon: typeof Bold, action: () => void, active = false, shortcut = '') => <button key={label} type="button" aria-label={label} title={`${t(label)}${shortcut ? ` (${shortcut})` : ''}`} aria-pressed={active} className={active ? 'active' : ''} onPointerDown={event => event.preventDefault()} onClick={() => run(action)}><Icon size={17}/></button>;
   const style = editor.isActive('heading') ? `h${editor.getAttributes('heading').level}` : 'paragraph';
   return <Anchored anchor={anchor} editor={editor} className="selection-bar contextual-format docs-selection-toolbar">
@@ -27,10 +33,11 @@ export function SelectionToolbar({ editor, anchor, onLink, onComment }: { editor
       {button('Text color', Palette, () => setPanel(value => value === 'color' ? null : 'color'), panel === 'color')}
       <span className="docs-toolbar-divider"/>{button('Link', Link2, onLink, editor.isActive('link'),'Ctrl/Cmd+K')}{button('Comment', MessageSquare, onComment)}
       {button('More formatting', MoreHorizontal, () => setPanel(value => value === 'more' ? null : 'more'), panel === 'more')}
+      {button('Close formatting toolbar', X, dismiss)}
     </div>
-    {panel === 'color' && <div className="docs-selection-panel"><strong>{t('Text color')}</strong><div className="docs-color-grid">{colors.map(color => <button key={color} aria-label={`Text color ${color}`} style={{ background: color }} onPointerDown={event => event.preventDefault()} onClick={() => run(() => { editor.chain().focus().setColor(color).run(); })}/>)}</div>
-      <strong>{t('Background color')}</strong><div className="docs-color-grid">{backgrounds.map(color => <button key={color} aria-label={`Background color ${color}`} style={{ background: color }} onPointerDown={event => event.preventDefault()} onClick={() => run(() => { editor.chain().focus().setBackgroundColor(color).run(); })}/>)}</div>
-      <div className="docs-selection-panel-row"><label>{t('Custom color')}<input aria-label="Custom text color" type="color" value={String(editor.getAttributes('textStyle').color || '#1f2329')} onChange={event => run(() => { editor.chain().focus().setColor(event.target.value).run(); })}/></label><button onPointerDown={event => event.preventDefault()} onClick={() => run(() => { editor.chain().focus().unsetColor().unsetBackgroundColor().unsetHighlight().run(); })}>{t('Reset')}</button></div>
+    {panel === 'color' && <div className="docs-selection-panel"><strong>{t('Text color')}</strong><div className="docs-color-grid">{colors.map(color => <button key={color} aria-label={`Text color ${color}`} style={{ background: color }} onPointerDown={event => event.preventDefault()} onClick={() => { run(() => { editor.chain().focus().setColor(color).run(); }); setPanel(null); }}/>)}</div>
+      <strong>{t('Background color')}</strong><div className="docs-color-grid">{backgrounds.map(color => <button key={color} aria-label={`Background color ${color}`} style={{ background: color }} onPointerDown={event => event.preventDefault()} onClick={() => { run(() => { editor.chain().focus().setBackgroundColor(color).run(); }); setPanel(null); }}/>)}</div>
+      <div className="docs-selection-panel-row"><label>{t('Custom color')}<input aria-label="Custom text color" type="color" value={String(editor.getAttributes('textStyle').color || '#1f2329')} onChange={event => run(() => { editor.chain().focus().setColor(event.target.value).run(); })}/></label><button onPointerDown={event => event.preventDefault()} onClick={() => { run(() => { editor.chain().focus().unsetColor().unsetBackgroundColor().unsetHighlight().run(); }); setPanel(null); }}>{t('Reset')}</button></div>
     </div>}
     {panel === 'more' && <div className="docs-selection-panel">
       <div className="docs-selection-panel-row"><select aria-label="Font family" value={editor.getAttributes('textStyle').fontFamily || ''} onChange={event => run(() => { const value = event.target.value; if (value) editor.chain().focus().setFontFamily(value).run(); else editor.chain().focus().unsetFontFamily().run(); })}><option value="">{t('Default font')}</option><option>Arial</option><option>Georgia</option><option>Times New Roman</option><option>Courier New</option></select>
