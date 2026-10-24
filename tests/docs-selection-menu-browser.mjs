@@ -28,16 +28,30 @@ async function untilSaved(page, check) {
     return false;
   }, { key, check }, { timeout: 12000 });
 }
-async function chooseBlock(page, label) {
+async function chooseBlock(page, id) {
   await page.getByRole('button', { name: 'Insert block' }).click();
   const dialog = page.getByRole('dialog', { name: 'Insert a block' });
   await dialog.waitFor({ state: 'visible' });
-  await dialog.getByRole('option', { name: label, exact: true }).click();
+  // Accessible option names also include the block description, and the UI
+  // may be localized. Match the action identity rather than English-only text.
+  const option = dialog.locator(`[role="option"][data-insert-id="${id}"]`);
+  await option.waitFor({ state: 'visible' });
+  assert.equal(await option.count(), 1, 'Expected one insert option for ' + id);
+  await option.click();
 }
 async function selectParagraph(page) {
-  // Triple-click is a real user gesture: ProseMirror must observe selection and
-  // emit selectionUpdate. Dispatching a synthetic selectionchange can leave
-  // its selection state unchanged after Undo/Redo while hiding the toolbar.
+  // Close the existing range through the real toolbar control before
+  // reselecting. In particular, Undo/Redo may restore the previous range.
+  const close = page.getByRole('button', { name: 'Close formatting toolbar' });
+  if (await close.isVisible()) {
+    await close.click();
+    await page.locator('.docs-selection-toolbar').waitFor({ state: 'hidden' });
+  } else {
+    // If Undo/Redo already hid the toolbar, collapse any browser-native range
+    // via real keyboard input before making a new triple-click selection.
+    await page.locator('.ProseMirror').focus();
+    await page.keyboard.press('ArrowRight');
+  }
   const paragraph = page.locator('.ProseMirror > p').filter({ hasText: 'Selected text for styling' });
   await paragraph.click({ clickCount: 3 });
   await page.waitForFunction(() =>
@@ -127,7 +141,7 @@ for (const width of [1365, 390]) {
       await headingSeven.click();
       await untilSaved(page, { kind: 'heading' });
       assert.equal(await editor.locator('[data-heading-level="7"]').count(), 1);
-      await chooseBlock(page, 'Timeline');
+      await chooseBlock(page, 'timeline');
       const timeline = editor.locator('[data-type="docsTimeline"]').last();
       const timelineSource = timeline.getByRole('textbox', { name: 'Timeline items' });
       await timelineSource.waitFor({ state: 'visible' });
