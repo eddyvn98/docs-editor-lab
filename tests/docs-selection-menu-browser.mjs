@@ -28,20 +28,21 @@ async function untilSaved(page, check) {
     return false;
   }, { key, check }, { timeout: 12000 });
 }
-async function chooseBlock(page, label) {
+async function chooseBlock(page) {
   await page.getByRole('button', { name: 'Insert block' }).click();
   const dialog = page.getByRole('dialog', { name: 'Insert a block' });
   await dialog.waitFor({ state: 'visible' });
-  await dialog.getByRole('option', { name: new RegExp(`^${label}\\b`) }).click();
+  // The option's accessible name includes its description as well as its label.
+  await dialog.getByRole('option', { name: /^Timeline/ }).click();
 }
 async function selectParagraph(page) {
-  const previousToolbar = page.locator('.docs-selection-toolbar');
-  if (await previousToolbar.isVisible().catch(() => false)) {
-    await previousToolbar.getByRole('button', { name: 'Close formatting toolbar' }).click();
-    await previousToolbar.waitFor({ state: 'hidden' });
+  const dismiss = page.getByRole('button', { name: 'Close formatting toolbar' });
+  if (await dismiss.isVisible()) {
+    await dismiss.click();
+    await page.locator('.docs-selection-toolbar').waitFor({ state: 'hidden' });
   }
-  // Use keyboard range selection so the editor observes it after toolbar actions
-  // and Undo/Redo, while avoiding a synthetic selectionchange event.
+  // Place a real caret in the paragraph, then extend the range with keyboard
+  // navigation; this reselects the same text reliably after Undo/Redo.
   const paragraph = page.locator('.ProseMirror > p').filter({ hasText: 'Selected text for styling' });
   await paragraph.click();
   await page.keyboard.press('Home');
@@ -133,7 +134,7 @@ for (const width of [1365, 390]) {
       await headingSeven.click();
       await untilSaved(page, { kind: 'heading' });
       assert.equal(await editor.locator('[data-heading-level="7"]').count(), 1);
-      await chooseBlock(page, 'Timeline');
+      await chooseBlock(page);
       const timeline = editor.locator('[data-type="docsTimeline"]').last();
       const timelineSource = timeline.getByRole('textbox', { name: 'Timeline items' });
       await timelineSource.waitFor({ state: 'visible' });
