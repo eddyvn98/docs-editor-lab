@@ -79,9 +79,13 @@ for (const width of [1365, 390]) {
       await palette.waitFor({ state: 'visible' });
       await palette.getByRole('button', { name: 'Text color #d83931', exact: true }).click();
       await untilSaved(page, { kind: 'color', value: '#d83931' });
+      await palette.waitFor({ state: 'hidden' });
       const colored = walk((await saved(page)).doc).find(n => n.text === 'Selected text for styling');
       assert.ok(colored?.marks?.some(mark => mark.type === 'textStyle' && mark.attrs?.color === '#d83931'));
-      await editor.locator(':scope > p').last().click();
+      const emptyParagraph = editor.locator(':scope > p').last();
+      // On mobile a floating toolbar must not cover the next editable line.
+      await emptyParagraph.click();
+      await floating.waitFor({ state: 'hidden' });
       await page.keyboard.type('/quote');
       const slash = page.getByRole('menu', { name: 'Insert block' });
       await slash.waitFor({ state: 'visible' });
@@ -118,7 +122,9 @@ for (const width of [1365, 390]) {
       await untilSaved(page, { kind: 'quote', count: 1 });
       await editor.locator('blockquote').last().click({ button: 'right' });
       await menu.getByRole('menuitem', { name: 'Turn into' }).click();
-      await menu.getByRole('menuitem', { name: /^Heading 7/ }).click();
+      const headingSeven = menu.getByRole('menuitem', { name: 'Heading 7', exact: true });
+      await headingSeven.waitFor({ state: 'visible' });
+      await headingSeven.click();
       await untilSaved(page, { kind: 'heading' });
       assert.equal(await editor.locator('[data-heading-level="7"]').count(), 1);
       await chooseBlock(page, 'Timeline');
