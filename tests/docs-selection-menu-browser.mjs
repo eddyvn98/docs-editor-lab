@@ -18,7 +18,9 @@ async function untilSaved(page, check) {
     if (!snapshot?.doc) return false;
     const nodes = (node, list = []) => { if (node) { list.push(node); (node.content || []).forEach(n => nodes(n, list)); } return list; };
     const all = nodes(snapshot.doc);
-    if (check.kind === 'bold') return all.some(n => n.text === 'Selected text for styling' && n.marks?.some(m => m.type === 'bold') === check.present);
+    // ProseMirror JSON omits marks entirely when none remain after Undo; absence means unmarked.
+    if (check.kind === 'bold') return all.some(n => n.type === 'text' && n.text === 'Selected text for styling' &&
+      (n.marks ?? []).some(m => m.type === 'bold') === check.present);
     if (check.kind === 'quote') return all.filter(n => n.type === 'blockquote' && nodes(n).some(t => t.text === 'Quote via slash')).length === check.count;
     if (check.kind === 'timeline') return all.some(n => n.type === 'docsTimeline' && n.attrs?.source === check.source);
     if (check.kind === 'color') return all.some(n => n.text === 'Selected text for styling' && n.marks?.some(m => m.type === 'textStyle' && m.attrs?.color === check.value));
