@@ -3,7 +3,7 @@ import type { Editor } from '@tiptap/react';
 import { foldingKey, goToHeading, toggleHeading, expandHeadings, documentHeadings } from './HeadingFolding';
 import { hiddenByHeading } from './outlineModel';
 import { useEditorPulse } from './useEditorPulse';
-export function WorkspaceOutline({ editor }: { editor: Editor }) {
+export function WorkspaceOutline({ editor, onNavigate }: { editor: Editor; onNavigate?: () => void }) {
   const pulse = useEditorPulse(editor), [active, setActive] = useState('');
   const state = foldingKey.getState(editor.state), sections = state?.sections || documentHeadings(editor.state.doc);
   const folded = state?.ids || new Set<string>();
@@ -30,7 +30,7 @@ export function WorkspaceOutline({ editor }: { editor: Editor }) {
       <div className={`outline-entry ${active === s.id ? 'current' : ''}`} key={s.id} style={{ paddingInlineStart: Math.min(Math.max(s.level - 1, 0), 4) * 8 }}>
         <button className="outline-fold" aria-label={`${folded.has(s.id) ? 'Expand' : 'Collapse'} section ${s.text || 'Untitled'}`}
           aria-expanded={!folded.has(s.id)} onClick={() => toggleHeading(editor, s.id)}>{folded.has(s.id) ? '\u25b8' : '\u25be'}</button>
-        <button title={s.text || 'Untitled heading'} aria-current={active === s.id ? 'location' : undefined} onClick={() => goToHeading(editor, s.pos)}>{s.text || 'Untitled heading'}</button>
+        <button title={s.text || 'Untitled heading'} aria-current={active === s.id ? 'location' : undefined} onClick={() => { goToHeading(editor, s.pos); if (window.innerWidth <= 1000) onNavigate?.(); }}>{s.text || 'Untitled heading'}</button>
       </div>)}</nav>
   </section>;
 }

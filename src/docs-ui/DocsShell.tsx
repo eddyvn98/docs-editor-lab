@@ -71,7 +71,7 @@ export function DocsShell({ editor, state, view, patchView, outlineOpen, onOutli
     {view.focus && <button className="docs-focus-exit" onClick={() => patchView({ focus: false })}><ArrowLeft size={16}/>{t('Exit focus')}</button>}
     {(outlineOpen || commentsOpen) && !view.focus && <button className="docs-panel-backdrop" aria-label="Close document panels" onClick={closePanels}/>}
     <div className={`workspace docs-workspace ${outlineOpen && !view.focus ? 'with-outline' : ''} ${commentsOpen && !view.focus ? 'with-comments' : ''}`}>
-      {outlineOpen && !view.focus && <aside id="docs-outline" className="docs-outline-panel" aria-label="Document navigation" onKeyDown={event => mobilePanel(event, onOutline)}><header><strong>{t('Outline')}</strong><button aria-label="Close outline" onClick={onOutline}><X size={16}/></button></header><WorkspaceOutline editor={editor}/></aside>}
+      {outlineOpen && !view.focus && <aside id="docs-outline" className="docs-outline-panel" aria-label="Document navigation" onKeyDown={event => mobilePanel(event, onOutline)}><header><strong>{t('Outline')}</strong><button aria-label="Close outline" onClick={onOutline}><X size={16}/></button></header><WorkspaceOutline editor={editor} onNavigate={onOutline}/></aside>}
       <section className="page docs-page"><DocumentHero editor={editor} title={state.title} onTitle={state.setTitle} status={state.status}/>{children}
         <footer className="page-footer docs-page-footer"><span>{words} {t('words')}<span aria-hidden="true"> &middot; </span>{Array.from(text).length} {t('characters')}</span>
           {!readOnly && <button onClick={() => { setPanel('comments'); onComment(); }}><MessageSquare size={14}/>{t('Add a comment')}</button>}</footer></section>

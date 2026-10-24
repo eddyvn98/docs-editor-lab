@@ -38,6 +38,7 @@ Once the dev server responds, terminal 2 (same checkout):
 
 ```bash
 EDITOR_URL=http://127.0.0.1:4184/ node --test tests/docs-selection-menu-browser.mjs
+EDITOR_URL=http://127.0.0.1:4184/ node --test tests/docs-outline-mobile-browser.mjs
 EDITOR_URL=http://127.0.0.1:4184/ node --test tests/docs-rich-block-browser.mjs
 EDITOR_URL=http://127.0.0.1:4184/ node --test tests/gutter-drag-browser.mjs
 ```
