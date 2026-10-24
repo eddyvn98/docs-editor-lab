@@ -3,7 +3,7 @@ import type { Comment } from "./comments";
 import { writeStorage, DOCUMENT_KEY, COMMENTS_KEY, TITLE_KEY } from "./storage";
 import { isDocument } from "./documentUtils";
 
-export const SESSION_KEY = "docs-editor-lab-session-v2";
+export const SESSION_KEY = "docs-editor-lab-session-v4";
 export type Session = { version: 2; doc: JSONContent; comments: Comment[]; title: string; savedAt: string };
 export function readSession(): Partial<Session> {
   try {
