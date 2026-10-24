@@ -13,9 +13,9 @@ try{
   await page.getByRole('button',{name:'Document templates'}).click();
   const gallery=page.getByRole('dialog',{name:'Template gallery'});
   await gallery.locator('.template-card').filter({hasText:'Meeting Notes'}).click();
-  await gallery.getByRole('region',{name:'Template preview'}).getByText('Meeting Notes').waitFor();
+  await gallery.getByRole('region',{name:'Template preview'}).getByRole('heading',{name:'Meeting Notes',exact:true}).waitFor();
   await gallery.getByRole('button',{name:'Insert Meeting Notes'}).click();
-  const inserted=editor.getByText('Meeting Notes',{exact:true});
+  const inserted=editor.locator('h1,h2,h3,h4').filter({hasText:'Meeting Notes'});
   await inserted.waitFor();
   await page.getByRole('button',{name:'Undo'}).click();
   assert.equal(await inserted.count(),0,'one Undo removes the complete template');
