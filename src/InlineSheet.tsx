@@ -2,9 +2,11 @@ import { Node, mergeAttributes } from '@tiptap/core';
 import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import type { NodeViewProps } from '@tiptap/react';
 import { useMemo, useState } from 'react';
+import { useEditorPulse } from './useEditorPulse';
 import {emptySheet,normalizeSheet,sheetUpdate,sheetReplace} from './sheetModel';
 import type {SheetData} from './sheetModel';
 function SheetView({ node, editor, updateAttributes }: NodeViewProps) {
+  useEditorPulse(editor);
   const sheet = normalizeSheet(node.attrs.sheet);
   const [selected,setSelected] = useState<[number,number]>([0,0]);
   const [search,setSearch] = useState(''), [replace,setReplace] = useState('');

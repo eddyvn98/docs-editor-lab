@@ -4,13 +4,15 @@ import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { BlockRangeSelection } from './blockSelection';
 import { batchAction } from './blockBatchActions';
 
+export const blockSelectionPluginKey = new PluginKey('docsBlockSelectionPlugin');
+
 export const BlockSelectionExtension = Extension.create({
   name: 'docsBlockSelection',
   addProseMirrorPlugins() {
     const editor = this.editor;
-    return [new Plugin({ key: new PluginKey('docsBlockSelectionPlugin'), props: {
+    return [new Plugin({ key: blockSelectionPluginKey, props: {
       decorations(state) {
-        if (!(state.selection instanceof BlockRangeSelection)) return null;
+        if (!(state.selection instanceof BlockRangeSelection)) return undefined;
         const decorations: Decoration[] = [];
         state.doc.nodesBetween(state.selection.from, state.selection.to, (node, pos, parent) => {
           if (parent === state.doc) decorations.push(Decoration.node(pos, pos + node.nodeSize, { class: 'docs-block-selected' }));

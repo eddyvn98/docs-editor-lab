@@ -77,7 +77,7 @@ export const HeadingFolding = Extension.create({
           return build(next.doc, ids);
         },
       },
-      props: { decorations: state => foldingKey.getState(state)?.decorations,
+      props: { decorations: state => foldingKey.getState(state)?.decorations ?? DecorationSet.empty,
         handleKeyDown(view, event) {
           if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
             view.dispatch(view.state.tr.setMeta(foldingKey, { all: false }));

@@ -1,6 +1,7 @@
 import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import type { Editor } from '@tiptap/react';
+export const blockIdentityKey = new PluginKey('docsBlockIdentityPlugin');
 export const BLOCK_TYPES = ['paragraph','heading','blockquote','callout','codeBlock','bulletList','orderedList','taskList','listItem','taskItem','image','table','columns','horizontalRule','toggleBlock','pageBreak','inlineSheet','docsToc','docsTimeline','docsMermaid','mediaBlock','equation','imageGallery','syncedBlock'];
 export const BlockIdentity = Extension.create({
   name: 'blockIdentity',
@@ -9,7 +10,7 @@ export const BlockIdentity = Extension.create({
     renderHTML: (attrs: Record<string, unknown>) => attrs.blockId ? { 'data-block-id': attrs.blockId } : {},
   } } }]; },
   onCreate() { this.editor.view.dispatch(this.editor.state.tr.setMeta('initializeBlockIds', true)); },
-  addProseMirrorPlugins() { return [new Plugin({ key: new PluginKey('docsBlockIdentityPlugin'),
+  addProseMirrorPlugins() { return [new Plugin({ key: blockIdentityKey,
     appendTransaction(transactions, _old, state) {
       if (!transactions.some(tr => tr.docChanged || tr.getMeta('initializeBlockIds'))) return null;
       const seen = new Set<string>(), tr = state.tr;

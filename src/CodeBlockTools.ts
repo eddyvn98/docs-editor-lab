@@ -1,9 +1,11 @@
 import { Extension } from '@tiptap/core';
-import { Plugin } from '@tiptap/pm/state';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { codeLanguages, normalizeLanguage, tokenizeCode } from './codeTokens';
 import { codeNodeView } from './codeNodeView';
+
+export const codeBlockHighlightKey = new PluginKey<DecorationSet>('docsCodeBlockHighlight');
 
 export const CodeBlockTools = Extension.create({
   name: 'codeBlockTools',
@@ -25,8 +27,9 @@ export const CodeBlockTools = Extension.create({
       return DecorationSet.create(doc, values);
     };
     return [new Plugin<DecorationSet>({
+      key: codeBlockHighlightKey,
       state: { init: (_, state) => decorate(state.doc), apply: (tr, old) => tr.docChanged ? decorate(tr.doc) : old },
-      props: { decorations(state) { return this.getState(state); }, nodeViews: { codeBlock: codeNodeView } },
+      props: { decorations(state) { return codeBlockHighlightKey.getState(state) ?? DecorationSet.empty; }, nodeViews: { codeBlock: codeNodeView } },
     })];
   },
 });

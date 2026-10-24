@@ -10,7 +10,7 @@ export const SearchHighlights = Extension.create({
   addProseMirrorPlugins() { return [new Plugin({
     key: searchKey,
     state: {
-      init: () => ({ query: '', current: 0, decorations: DecorationSet.empty }),
+      init: (): SearchState => ({ query: '', current: 0, decorations: DecorationSet.empty, caseSensitive: false, wholeWord: false }),
       apply(tr, previous) {
         const next = tr.getMeta(searchKey) as Omit<SearchState, 'decorations'> | undefined;
         if (!next && !tr.docChanged) return previous;

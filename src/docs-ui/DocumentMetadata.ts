@@ -28,6 +28,8 @@ export function updateMetadata(editor: Editor, values: { icon?: string; cover?: 
   if (values.coverPosition !== undefined) tr.setDocAttribute('docsCoverPosition', Math.max(0, Math.min(100, values.coverPosition)));
   editor.view.dispatch(tr);
 }
+export const documentMetadataKey = new PluginKey('docsDocumentMetadataPlugin');
+
 export const DocumentMetadata = Extension.create({
   name: 'documentMetadata',
   addGlobalAttributes() { return [{ types: ['doc'], attributes: {
@@ -37,7 +39,7 @@ export const DocumentMetadata = Extension.create({
   onCreate() {
     if (!this.editor.state.doc.attrs.docsId) this.editor.view.dispatch(this.editor.state.tr.setDocAttribute('docsId', crypto.randomUUID()).setMeta('addToHistory', false).setMeta('docs-metadata', true));
   },
-  addProseMirrorPlugins() { return [new Plugin({ key: new PluginKey('docsDocumentMetadataPlugin'),
+  addProseMirrorPlugins() { return [new Plugin({ key: documentMetadataKey,
     appendTransaction(transactions, _old, state) {
       if (!transactions.some(tr => tr.docChanged && !tr.getMeta('docs-metadata'))) return null;
       const tr = state.tr.setMeta('docs-metadata', true).setMeta('addToHistory', false);

@@ -34,6 +34,7 @@ function SyncedView({ editor, node, getPos }: NodeViewProps) {
     <NodeViewContent/>
   </NodeViewWrapper>;
 }
+export const syncedBlockKey = new PluginKey('docsSyncedBlockPlugin');
 export const SyncedBlock = Node.create({
   name: 'syncedBlock', group: 'block', content: 'block+', isolating: true, defining: true,
   addAttributes() { return { syncId: { default: null, parseHTML: element => element.getAttribute('data-sync-id'), renderHTML: attrs => ({ 'data-sync-id': attrs.syncId || '' }) } }; },
@@ -41,7 +42,7 @@ export const SyncedBlock = Node.create({
   renderHTML({ HTMLAttributes }) { return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'syncedBlock', class: 'docs-synced-block' }), 0]; },
   addNodeView() { return ReactNodeViewRenderer(SyncedView); },
   onCreate() { this.editor.view.dispatch(this.editor.state.tr.setMeta('initializeSyncedBlocks', true).setMeta('addToHistory', false)); },
-  addProseMirrorPlugins() { return [new Plugin({ key: new PluginKey('docsSyncedBlockPlugin'),
+  addProseMirrorPlugins() { return [new Plugin({ key: syncedBlockKey,
     appendTransaction(transactions, oldState, state) {
       const initialize = transactions.some(tr => tr.getMeta('initializeSyncedBlocks'));
       if (!initialize && !transactions.some(tr => tr.docChanged && !tr.getMeta('synced-propagation') && tr.getMeta('addToHistory') !== false)) return null;
