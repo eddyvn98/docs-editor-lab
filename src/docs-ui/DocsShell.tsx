@@ -13,7 +13,6 @@ import { useEditorPulse } from '../useEditorPulse';
 import { isSuggesting } from '../docs-content/Suggestions';
 import { suggestions } from '../docs-content/reviewModel';
 import { DocumentHero } from './DocumentHero';
-import { starterContent } from '../sampleContent';
 import { PageSettings } from './PageSettings';
 import { ShareDialog } from './ShareDialog';
 import { BlockBatchBar } from './BlockBatchBar';
@@ -59,12 +58,7 @@ export function DocsShell({ editor, state, view, patchView, outlineOpen, onOutli
         {!readOnly && <><div className="docs-undo-group"><button className="docs-icon-button" aria-label="Undo" title="Undo" disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()}><Undo2 size={17}/></button><button className="docs-icon-button" aria-label="Redo" title="Redo" disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()}><Redo2 size={17}/></button></div>
           <button className="docs-icon-button docs-insert-trigger" aria-label="Insert block" title={t('Insert')} onPointerDown={event => event.preventDefault()} onClick={onInsert}><Plus size={18}/></button>
           <button className="docs-icon-button docs-template-trigger" aria-label="Document templates" title={t('Templates')} onClick={onTemplates}><LayoutTemplate size={18}/></button>
-          <button className="docs-icon-button docs-demo-trigger" aria-label="Nạp toàn bộ 21 block mẫu (Demo)" title="Nạp toàn bộ 21 block mẫu (Demo)" onClick={() => {
-            if (window.confirm('Nạp lại toàn bộ 21 block mẫu Lark Docs để hiển thị đầy đủ trên màn hình?')) {
-              editor.chain().setContent(starterContent, { errorOnInvalidContent: true }).setMeta('docs-direct-edit', true).run();
-              state.setTitle('QA - Docs parity checklist (Project Atlas)');
-            }
-          }}><FileText size={18}/></button></>}
+</>}
         <button className="docs-icon-button docs-search-trigger" aria-label="Search document" title={t('Search document')} onClick={() => window.dispatchEvent(new Event('docs-open-search'))}><Search size={18}/></button>
         <button className="docs-share-button docs-primary" aria-label="Share document copy" onClick={() => setShare(true)}><Share2 size={16}/><span>{t('Share')}</span></button>
         <ModeMenu editor={editor} readOnly={readOnly} onReadOnly={value => patchView({ mode: value ? 'read' : 'edit' })} onReview={review}/>

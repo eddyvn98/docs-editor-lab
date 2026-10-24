@@ -7,17 +7,22 @@ function Visual({node,editor,updateAttributes}:NodeViewProps){
   const [,refresh]=useState(0);
   useEffect(()=>{const updated=()=>refresh(x=>x+1);editor.on('transaction',updated);return ()=>{editor.off('transaction',updated);};},[editor]);
   const [draft,setDraft]=useState(String(node.attrs.source||''));
+  // Undo, redo, linked updates and document replacement must update the editor draft.
+  useEffect(()=>{setDraft(String(node.attrs.source||''));},[node.attrs.source]);
+  const applySource=()=>{if(editable)updateAttributes({source:draft});};
   const headings:{text:string;pos:number;level:number}[]=[];
   editor.state.doc.descendants((child,pos)=>{if(child.type.name==='heading') headings.push({text:child.textContent||'Untitled heading',pos,level:child.attrs.level||1});});
   const timeline=String(node.attrs.source||'').split('\n').map(v=>v.trim()).filter(Boolean);
   return <NodeViewWrapper as="section" data-type={name} data-block-id={node.attrs.blockId} className="docs-visual" contentEditable={false}>
     <header><strong>{name==='docsToc'?'Table of contents':name==='docsTimeline'?'Timeline':'Mermaid diagram'}</strong>
-      {name!=='docsToc'&&editable&&<button onClick={()=>updateAttributes({source:draft})}>Apply</button>}</header>
+      {name!=='docsToc'&&editable&&<button onClick={applySource}>Apply</button>}</header>
     {name==='docsToc'? <nav aria-label="Table of contents">{headings.length?headings.map((h,i)=><button
       key={i} style={{paddingLeft:(h.level-1)*16+8}} onClick={()=>editor.chain().focus().setTextSelection(h.pos+1).scrollIntoView().run()}>{h.text}</button>)
       :<p>Add document headings to populate the table of contents.</p>}</nav>:
     <><label>Source<textarea aria-label={name==='docsTimeline'?'Timeline items':'Mermaid source'} rows={4} value={draft}
-      readOnly={!editable} onChange={e=>setDraft(e.target.value)}/></label>
+      readOnly={!editable} onChange={e=>setDraft(e.target.value)} onKeyDown={event=>{
+        if(event.key==='Enter'&&(event.metaKey||event.ctrlKey)){event.preventDefault();applySource();}
+      }}/></label>
       {name==='docsTimeline'? <ol>{timeline.length?timeline.map((line,i)=><li key={i}>{line}</li>):<li>Add an event above.</li>}</ol>:
         <div aria-label="Diagram preview" className="mermaid-readable">{(draft||'graph TD\n  A[Start] --> B[Next step]').split('\n')
           .filter(line=>line.includes('-->')).map((line,i)=>{

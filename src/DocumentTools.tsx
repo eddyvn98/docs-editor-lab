@@ -75,11 +75,13 @@ export function DocumentTools({ editor, title, comments, onTitle, onComments }: 
       <button role="menuitem" onClick={() => { setOpen(false); setPanel('versions'); }}><History size={16}/>{t('Version history')}</button>
       <button role="menuitem" onClick={() => {
         setOpen(false);
-        if (window.confirm('Nạp toàn bộ dữ liệu mẫu 21 Block Lark Docs (Full Parity)?')) {
+        if (!editor.isEditable || !window.confirm('Replace this local document with the demo? A recovery checkpoint will be saved first.')) return;
+        report(() => {
+          checkpoint(); // Abort without replacing the document if browser storage is full.
           editor.chain().setContent(starterContent, { errorOnInvalidContent: true }).setMeta('docs-direct-edit', true).run();
-          onTitle('QA - Docs parity checklist (Project Atlas)');
-          setMessage('Đã nạp toàn bộ 21 block mẫu Lark Docs!');
-        }
+          onComments([]); onTitle('QA - Docs parity checklist (Project Atlas)');
+          setMessage('Demo restored. The previous document is available in Version history.');
+        });
       }}><FileText size={16}/>{t('Nạp toàn bộ 21 block mẫu (Demo)')}</button></div>}
     <input ref={fileRef} hidden type="file" accept=".json,.html,.htm" onChange={event => { void importFile(event.target.files?.[0]); }}/>
     {message && !panel && <div className="docs-operation-notice" role="status">{message}<button aria-label="Dismiss document tools notice" onClick={() => setMessage('')}><X size={14}/></button></div>}

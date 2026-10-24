@@ -37,7 +37,7 @@ export function InsertPalette({ editor, onClose, afterPos }: { editor: Editor; o
     if (id === 'templates-gallery') { onClose(); window.dispatchEvent(new Event('docs-open-template-gallery')); return; }
     if (id.startsWith('template-')) { if (insertDocumentShortcut(editor, id, target.current)) { onClose(); return; } setError('Template insertion failed.'); return; }
     if (id === 'templates') { onClose(); requestDocs(editor, { action: 'templates', pos: target.current }); return; }
-    if (insertNewBlock(editor, id, rows, columns, target.current)) { onClose(); requestAnimationFrame(() => editor.view.focus()); }
+    if (insertNewBlock(editor, id, rows, columns, target.current)) { onClose(); }
     else setError('This block could not be inserted here. Your content was not replaced.');
   };
   const pick = (id: string) => id === 'table' ? setTable(true) : choose(id);
