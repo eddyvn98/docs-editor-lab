@@ -35,12 +35,15 @@ async function chooseBlock(page, label) {
   await dialog.getByRole('option', { name: label, exact: true }).click();
 }
 async function selectParagraph(page) {
-  await page.locator('.ProseMirror > p').filter({ hasText: 'Selected text for styling' }).evaluate(el => {
-    const selection = window.getSelection(), range = document.createRange();
-    el.closest('[contenteditable="true"]')?.focus();
-    range.selectNodeContents(el); selection?.removeAllRanges(); selection?.addRange(range);
-    document.dispatchEvent(new Event('selectionchange'));
-  });
+  // Triple-click is a real user gesture: ProseMirror must observe selection and
+  // emit selectionUpdate. Dispatching a synthetic selectionchange can leave
+  // its selection state unchanged after Undo/Redo while hiding the toolbar.
+  const paragraph = page.locator('.ProseMirror > p').filter({ hasText: 'Selected text for styling' });
+  await paragraph.click({ clickCount: 3 });
+  await page.waitForFunction(() =>
+    window.getSelection()?.toString().trim() === 'Selected text for styling',
+  );
+  await page.getByRole('toolbar', { name: 'Selection formatting' }).waitFor({ state: 'visible' });
 }
 for (const width of [1365, 390]) {
   test(`Docs selection, slash, context and history at ${width}px`, async () => {
@@ -59,7 +62,8 @@ for (const width of [1365, 390]) {
       const editor = page.locator('.ProseMirror');
       await editor.waitFor({ state: 'visible' });
       await selectParagraph(page);
-      const toolbar = page.getByRole('toolbar', { name: 'Selection formatting' });
+      const floating = page.locator('.docs-selection-toolbar');
+      const toolbar = floating.getByRole('toolbar', { name: 'Selection formatting' });
       await toolbar.waitFor({ state: 'visible' });
       await toolbar.getByRole('button', { name: 'Bold' }).click();
       await untilSaved(page, { kind: 'bold', present: true });
@@ -69,8 +73,11 @@ for (const width of [1365, 390]) {
       await untilSaved(page, { kind: 'bold', present: true });
 
       await selectParagraph(page);
-      await toolbar.getByRole('button', { name: 'Text color' }).click();
-      await toolbar.getByRole('button', { name: 'Text color #d83931' }).click();
+      await toolbar.getByRole('button', { name: 'Text color', exact: true }).click();
+      // The palette is a sibling of role=toolbar, inside the same floating root.
+      const palette = floating.locator('.docs-selection-panel');
+      await palette.waitFor({ state: 'visible' });
+      await palette.getByRole('button', { name: 'Text color #d83931', exact: true }).click();
       await untilSaved(page, { kind: 'color', value: '#d83931' });
       const colored = walk((await saved(page)).doc).find(n => n.text === 'Selected text for styling');
       assert.ok(colored?.marks?.some(mark => mark.type === 'textStyle' && mark.attrs?.color === '#d83931'));
