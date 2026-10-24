@@ -27,10 +27,10 @@ export function WorkspaceOutline({ editor }: { editor: Editor }) {
     <div className="outline-actions"><button onClick={() => expandHeadings(editor)}>Expand all</button><button onClick={() => expandHeadings(editor, true)}>Collapse all</button></div>
     {!sections.length && <p className="empty-panel">Headings added to the document appear here.</p>}
     <nav aria-label="Document outline">{sections.filter(s => !hiddenByHeading(s.pos, sections, folded)).map(s =>
-      <div className={`outline-entry ${active === s.id ? 'current' : ''}`} key={s.id} style={{ paddingInlineStart: (s.level - 1) * 10 }}>
+      <div className={`outline-entry ${active === s.id ? 'current' : ''}`} key={s.id} style={{ paddingInlineStart: Math.min(Math.max(s.level - 1, 0), 4) * 8 }}>
         <button className="outline-fold" aria-label={`${folded.has(s.id) ? 'Expand' : 'Collapse'} section ${s.text || 'Untitled'}`}
           aria-expanded={!folded.has(s.id)} onClick={() => toggleHeading(editor, s.id)}>{folded.has(s.id) ? '\u25b8' : '\u25be'}</button>
-        <button aria-current={active === s.id ? 'location' : undefined} onClick={() => goToHeading(editor, s.pos)}>{s.text || 'Untitled heading'}</button>
+        <button title={s.text || 'Untitled heading'} aria-current={active === s.id ? 'location' : undefined} onClick={() => goToHeading(editor, s.pos)}>{s.text || 'Untitled heading'}</button>
       </div>)}</nav>
   </section>;
 }

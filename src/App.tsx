@@ -44,6 +44,7 @@ import './docs-ui/docs-rich-content.css';
 import './docs-ui/docs-review.css';
 import './docs-ui/docs-menus.css';
 import './docs-ui/docs-operations.css';
+import './docs-ui/docs-visual-polish.css';
 
 export default function App() {
   const [initial] = useState(readLocalDocument);
