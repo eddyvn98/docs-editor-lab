@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
+import type { JSONContent } from "@tiptap/core";
 import { readComments } from "./comments";
 import type { Comment } from "./comments";
 import { readSession, saveSession, SESSION_KEY } from "./session";
@@ -22,6 +23,19 @@ export function useDocumentState(editor: Editor | null, startupError = "") {
     const result = saveSession(editor.getJSON(), data.current.comments, data.current.title);
     if (result.ok) { dirty.current = false; setStatus("Saved locally"); setNotice(""); }
     else { setStatus("Not saved"); setNotice(result.error); }
+  }, [editor]);
+  const replaceDocument = useCallback((doc: JSONContent, nextTitle: string) => {
+    if (!editor || editor.isDestroyed) return false;
+    data.current.blocked = false;
+    setBlocked(false);
+    setNotice("");
+    const result = saveSession(doc, data.current.comments, nextTitle);
+    if (!result.ok) { setStatus("Not saved"); setNotice(result.error); return false; }
+    dirty.current = false;
+    setTitle(nextTitle);
+    setStatus("Saved locally");
+    setRevision(value => value + 1);
+    return true;
   }, [editor]);
   useEffect(() => {
     if (!editor) return;
@@ -57,5 +71,5 @@ export function useDocumentState(editor: Editor | null, startupError = "") {
     if (!window.confirm("Replace the stored document with the current tab's copy? Export first to preserve both.")) return;
     data.current.blocked = false; setBlocked(false); dirty.current = true; setNotice(""); flush();
   };
-  return { comments, setComments, title, setTitle, revision, status, notice, setNotice, blocked, keepMine, flush };
+  return { comments, setComments, title, setTitle, revision, status, notice, setNotice, blocked, keepMine, flush, replaceDocument };
 }

@@ -61,8 +61,14 @@ export function DocsShell({ editor, state, view, patchView, outlineOpen, onOutli
           <button className="docs-icon-button docs-template-trigger" aria-label="Document templates" title={t('Templates')} onClick={onTemplates}><LayoutTemplate size={18}/></button>
           <button className="docs-icon-button docs-demo-trigger" aria-label="Nạp toàn bộ 21 block mẫu (Demo)" title="Nạp toàn bộ 21 block mẫu (Demo)" onClick={() => {
             if (window.confirm('Nạp lại toàn bộ 21 block mẫu Lark Docs để hiển thị đầy đủ trên màn hình?')) {
-              editor.chain().setContent(starterContent, { errorOnInvalidContent: true }).setMeta('docs-direct-edit', true).run();
-              state.setTitle('QA - Docs parity checklist (Project Atlas)');
+              try {
+                const loaded = editor.chain().setContent(starterContent).setMeta('docs-direct-edit', true).run();
+                if (!loaded || !state.replaceDocument(editor.getJSON(), 'QA - Docs parity checklist (Project Atlas)')) {
+                  state.setNotice('Không thể lưu bộ mẫu. Hãy kiểm tra trạng thái lưu trên thanh công cụ rồi thử lại.');
+                }
+              } catch (error) {
+                state.setNotice(`Không thể nạp bộ mẫu: ${error instanceof Error ? error.message : 'lỗi không xác định'}. Tài liệu hiện tại vẫn được giữ nguyên.`);
+              }
             }
           }}><FileText size={18}/></button></>}
         <button className="docs-icon-button docs-search-trigger" aria-label="Search document" title={t('Search document')} onClick={() => window.dispatchEvent(new Event('docs-open-search'))}><Search size={18}/></button>
