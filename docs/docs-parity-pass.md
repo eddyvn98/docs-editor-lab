@@ -38,12 +38,14 @@ Once the dev server responds, terminal 2 (same checkout):
 
 ```bash
 EDITOR_URL=http://127.0.0.1:4184/ node --test tests/docs-selection-menu-browser.mjs
-EDITOR_URL=http://127.0.0.1:4184/ node tests/docs-parity-browser.mjs
+EDITOR_URL=http://127.0.0.1:4184/ node --test tests/docs-rich-block-browser.mjs
 EDITOR_URL=http://127.0.0.1:4184/ node --test tests/gutter-drag-browser.mjs
 ```
 
-The selection/menu and Docs parity suites exercise 1365px and 390px;
-the gutter-drag suite uses its own 1280px viewport. These tests exercise
-the served app; a missing Playwright installation, Chromium binary, or
-local server is not a PASS. The optional dependency must not be committed
-to `package.json` or the lockfile. No CI or out-of-scope product changes.
+The selection/menu and rich-block suites exercise 1365px and 390px;
+the gutter-drag suite uses its own 1280px viewport. These three suites
+form the Docs-only browser acceptance set. The legacy
+`tests/docs-parity-browser.mjs` also exercises inline Sheets and is not
+part of this in-scope acceptance run. A missing Playwright installation,
+Chromium binary, or running local server is not a PASS. Do not commit
+the optional dependency to `package.json` or the lockfile; no CI changes.
