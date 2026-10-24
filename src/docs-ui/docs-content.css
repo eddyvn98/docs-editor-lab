@@ -1,0 +1,23 @@
+.docs-shell .doc-columns-view { position:relative; margin:12px 0; }
+.docs-shell .doc-columns-view > .doc-columns { display:grid; gap:24px; padding:0; margin:0; border:0; background:none; }
+.docs-shell .doc-column { min-width:0; padding:0 2px; border:0; background:transparent; }
+.docs-column-controls { position:absolute; inset:0; pointer-events:none; }
+.docs-column-resizer { position:absolute; top:0; bottom:0; width:12px; padding:0; margin-left:-6px; border:0; background:transparent; cursor:col-resize; pointer-events:auto; touch-action:none; opacity:0; }
+.docs-column-resizer::after { content:""; position:absolute; top:3px; bottom:3px; left:5px; width:2px; border-radius:2px; background:var(--docs-blue); }
+.doc-columns-view:hover > .docs-column-controls .docs-column-resizer,.docs-column-resizer:focus-visible,.doc-columns-view.is-resizing .docs-column-resizer { opacity:.5; }
+.docs-column-resizer:hover,.docs-column-resizer:focus-visible { opacity:1!important; }
+.docs-shell.is-reading .docs-column-controls { display:none; }
+.docs-shell .ProseMirror .docs-code-view { border:1px solid var(--docs-border); border-radius:6px; background:var(--docs-hover); }
+.docs-shell .ProseMirror .docs-code-view pre { background:none; margin:0; border-radius:0; }
+.docs-shell .ProseMirror .callout { border-radius:5px; }
+.docs-shell .ProseMirror .search-match { background:#fff0a8; border-radius:2px; }
+.docs-shell .ProseMirror .search-current { background:#ffca65; outline:1px solid #b77700; }
+.docs-findbar { position:fixed; right:26px; top:68px; z-index:80; padding:10px; width:340px; max-width:calc(100vw - 24px); background:var(--docs-surface); border:1px solid var(--docs-border); border-radius:8px; box-shadow:var(--docs-shadow); font-size:13px; }
+.docs-find-row { display:flex; gap:5px; align-items:center; margin:4px 0; }
+.docs-find-row input { min-width:0; flex:1; border:1px solid var(--docs-border); border-radius:4px; padding:7px; background:var(--docs-bg); color:var(--docs-ink); font-size:13px; }
+.docs-find-row button { border:0; background:none; padding:5px; border-radius:4px; display:inline-flex; }
+.docs-find-row button:hover { background:var(--docs-hover); }
+.docs-find-options { display:flex; align-items:center; justify-content:space-between; color:var(--docs-muted); font-size:11px; margin-top:7px; }
+.docs-find-options label { display:flex; gap:3px; align-items:center; }
+@media(max-width:640px) { .docs-shell .doc-columns-view > .doc-columns { display:block!important; } .docs-shell .doc-column + .doc-column { margin-top:14px; } .docs-column-controls { display:none; } .docs-findbar { right:12px; top:62px; } }
+@media print { .docs-column-controls,.docs-findbar { display:none!important; } .docs-shell .doc-columns-view > .doc-columns { display:grid!important; } .docs-block-selected { background:transparent!important; outline:none!important; } }

@@ -1,48 +1,43 @@
+import { useState } from 'react';
 import type { Editor } from '@tiptap/react';
+import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, CheckSquare, Code2, Highlighter, Italic, Link2, List, ListOrdered, MessageSquare, MoreHorizontal, Palette, Strikethrough, Underline } from 'lucide-react';
 import type { Anchor } from './targets';
 import { Anchored } from './Anchored';
 import { requestDocs } from './docsEvents';
-export function SelectionToolbar({ editor, anchor, onLink, onComment }: {
-  editor: Editor; anchor: Anchor; onLink: () => void; onComment: () => void;
-}) {
-  const restore = () => {
-    if (anchor.from !== undefined && anchor.to !== undefined) editor.commands.setTextSelection({ from: anchor.from, to: anchor.to });
-  };
-  const button = (label: string, run: () => void, active = false, title = label) => <button key={label} type="button" aria-label={label}
-    title={title} aria-pressed={active} className={active ? 'active' : ''} onPointerDown={e => e.preventDefault()}
-    onClick={() => { restore(); run(); }}>{label}</button>;
+import { t, useDocsLocale } from './docs-ui/locale';
+const colors = ['#1f2329','#646a73','#d83931','#d87021','#b58c00','#2e7d32','#007f82','#245bdb','#7b35c7','#b33381'];
+const backgrounds = ['#ffffff','#f2f3f5','#ffe2e0','#ffedcf','#fff5b3','#d9f5d6','#d5f6f2','#dce8ff','#ede0ff','#ffdded'];
+export function SelectionToolbar({ editor, anchor, onLink, onComment }: { editor: Editor; anchor: Anchor; onLink: () => void; onComment: () => void }) {
+  useDocsLocale();
+  const [panel, setPanel] = useState<'color' | 'more' | null>(null);
+  const restore = () => { if (anchor.from !== undefined && anchor.to !== undefined && anchor.to <= editor.state.doc.content.size) editor.commands.setTextSelection({ from: anchor.from, to: anchor.to }); };
+  const run = (action: () => void) => { if (!editor.isEditable) return; restore(); action(); };
+  const button = (label: string, Icon: typeof Bold, action: () => void, active = false, shortcut = '') => <button key={label} type="button" aria-label={label} title={`${t(label)}${shortcut ? ` (${shortcut})` : ''}`} aria-pressed={active} className={active ? 'active' : ''} onPointerDown={event => event.preventDefault()} onClick={() => run(action)}><Icon size={17}/></button>;
   const style = editor.isActive('heading') ? `h${editor.getAttributes('heading').level}` : 'paragraph';
-  return <Anchored anchor={anchor} editor={editor} className="selection-bar contextual-format">
+  return <Anchored anchor={anchor} editor={editor} className="selection-bar contextual-format docs-selection-toolbar">
     <div role="toolbar" aria-label="Selection formatting" className="selection-controls">
-      <select aria-label="Selected text style" value={style} onChange={event => {
-        restore(); const value = event.target.value;
-        if (value === 'paragraph') editor.chain().focus().setParagraph().run();
-        else editor.chain().focus().setHeading({ level: Number(value[1]) as 1 | 2 | 3 }).run();
-      }}><option value="paragraph">Text</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option></select>
-      {button('B', () => { editor.chain().focus().toggleBold().run(); }, editor.isActive('bold'), 'Bold')}
-      {button('I', () => { editor.chain().focus().toggleItalic().run(); }, editor.isActive('italic'), 'Italic')}
-      {button('U', () => { editor.chain().focus().toggleUnderline().run(); }, editor.isActive('underline'), 'Underline')}
-      {button('S', () => { editor.chain().focus().toggleStrike().run(); }, editor.isActive('strike'), 'Strikethrough')}
-      {button('Code', () => { editor.chain().focus().toggleCode().run(); }, editor.isActive('code'))}
-      {button('Highlight', () => { editor.chain().focus().toggleHighlight().run(); }, editor.isActive('highlight'))}
-      <select aria-label="Selection alignment" value={editor.getAttributes(editor.isActive('heading') ? 'heading' : 'paragraph').textAlign || 'left'}
-        onChange={event => { restore(); editor.chain().focus().setTextAlign(event.target.value).run(); }}>
-        <option value="left">Left</option><option value="center">Center</option><option value="right">Right</option>
-      </select>
-      <div className="color-tools" aria-label="Text color palette">
-        {['#27344b', '#e2585b', '#2975d9'].map(color => <button key={color} type="button" aria-label={`Text color ${color}`}
-          onPointerDown={event => event.preventDefault()} onClick={() => { restore(); editor.chain().focus().setColor(color).run(); }}>
-          <span className="color-swatch" style={{ background: color }}/></button>)}
-        {['#fff3b0', '#dcecff'].map(color => <button key={color} type="button" aria-label={`Background color ${color}`}
-          onPointerDown={event => event.preventDefault()} onClick={() => { restore(); editor.chain().focus().setBackgroundColor(color).run(); }}>
-          <span className="color-swatch" style={{ background: color }}/></button>)}
-      </div>
-      {button('List', () => { editor.chain().focus().toggleBulletList().run(); }, editor.isActive('bulletList'))}
-      {button('Checklist', () => { editor.chain().focus().toggleTaskList().run(); }, editor.isActive('taskList'))}
-      {button('Block style', () => requestDocs(editor, { action: 'block-style' }))}
-      {button('Save template', () => requestDocs(editor, { action: 'template-save' }))}
-      {button('Clear format', () => { editor.chain().focus().unsetBold().unsetItalic().unsetUnderline().unsetStrike().unsetCode().unsetHighlight().unsetColor().unsetBackgroundColor().run(); })}
-      {button('Link', onLink)}{button('Comment', onComment)}
+      <select aria-label="Selected text style" value={style} onChange={event => run(() => { if (event.target.value === 'paragraph') editor.chain().focus().setParagraph().run(); else editor.chain().focus().setNode('heading', { level: Number(event.target.value.slice(1)) }).run(); })}><option value="paragraph">{t('Text')}</option>{[1,2,3,4,5,6,7,8,9].map(level => <option key={level} value={`h${level}`}>{t(`Heading ${level}`)}</option>)}</select>
+      <span className="docs-toolbar-divider"/>
+      {button('Bold', Bold, () => { editor.chain().focus().toggleBold().run(); }, editor.isActive('bold'),'Ctrl/Cmd+B')}
+      {button('Italic', Italic, () => { editor.chain().focus().toggleItalic().run(); }, editor.isActive('italic'),'Ctrl/Cmd+I')}
+      {button('Underline', Underline, () => { editor.chain().focus().toggleUnderline().run(); }, editor.isActive('underline'),'Ctrl/Cmd+U')}
+      {button('Strikethrough', Strikethrough, () => { editor.chain().focus().toggleStrike().run(); }, editor.isActive('strike'))}
+      {button('Code', Code2, () => { editor.chain().focus().toggleCode().run(); }, editor.isActive('code'))}
+      {button('Highlight', Highlighter, () => { editor.chain().focus().toggleHighlight().run(); }, editor.isActive('highlight'))}
+      {button('Text color', Palette, () => setPanel(value => value === 'color' ? null : 'color'), panel === 'color')}
+      <span className="docs-toolbar-divider"/>{button('Link', Link2, onLink, editor.isActive('link'),'Ctrl/Cmd+K')}{button('Comment', MessageSquare, onComment)}
+      {button('More formatting', MoreHorizontal, () => setPanel(value => value === 'more' ? null : 'more'), panel === 'more')}
     </div>
+    {panel === 'color' && <div className="docs-selection-panel"><strong>{t('Text color')}</strong><div className="docs-color-grid">{colors.map(color => <button key={color} aria-label={`Text color ${color}`} style={{ background: color }} onPointerDown={event => event.preventDefault()} onClick={() => run(() => { editor.chain().focus().setColor(color).run(); })}/>)}</div>
+      <strong>{t('Background color')}</strong><div className="docs-color-grid">{backgrounds.map(color => <button key={color} aria-label={`Background color ${color}`} style={{ background: color }} onPointerDown={event => event.preventDefault()} onClick={() => run(() => { editor.chain().focus().setBackgroundColor(color).run(); })}/>)}</div>
+      <div className="docs-selection-panel-row"><label>{t('Custom color')}<input aria-label="Custom text color" type="color" value={String(editor.getAttributes('textStyle').color || '#1f2329')} onChange={event => run(() => { editor.chain().focus().setColor(event.target.value).run(); })}/></label><button onPointerDown={event => event.preventDefault()} onClick={() => run(() => { editor.chain().focus().unsetColor().unsetBackgroundColor().unsetHighlight().run(); })}>{t('Reset')}</button></div>
+    </div>}
+    {panel === 'more' && <div className="docs-selection-panel">
+      <div className="docs-selection-panel-row"><select aria-label="Font family" value={editor.getAttributes('textStyle').fontFamily || ''} onChange={event => run(() => { const value = event.target.value; if (value) editor.chain().focus().setFontFamily(value).run(); else editor.chain().focus().unsetFontFamily().run(); })}><option value="">{t('Default font')}</option><option>Arial</option><option>Georgia</option><option>Times New Roman</option><option>Courier New</option></select>
+        <select aria-label="Font size" value={editor.getAttributes('textStyle').fontSize || ''} onChange={event => run(() => { if (event.target.value) editor.chain().focus().setFontSize(event.target.value).run(); else editor.chain().focus().unsetFontSize().run(); })}><option value="">{t('Default size')}</option>{[12,14,16,18,20,24,28,32].map(size => <option key={size} value={`${size}px`}>{size}</option>)}</select></div>
+      <div className="docs-selection-panel-row">{button('Bullet list',List,()=>{editor.chain().focus().toggleBulletList().run();},editor.isActive('bulletList'))}{button('Numbered list',ListOrdered,()=>{editor.chain().focus().toggleOrderedList().run();},editor.isActive('orderedList'))}{button('Checklist',CheckSquare,()=>{editor.chain().focus().toggleTaskList().run();},editor.isActive('taskList'))}
+        {([['left',AlignLeft],['center',AlignCenter],['right',AlignRight],['justify',AlignJustify]] as const).map(([alignment,Icon])=>button(`Align ${alignment}`,Icon,()=>{editor.chain().focus().setTextAlign(alignment).run();},editor.isActive({textAlign:alignment})))}</div>
+      <div className="docs-selection-panel-row"><button onClick={()=>run(()=>requestDocs(editor,{action:'block-style'}))}>{t('Block style')}</button><button onClick={()=>run(()=>requestDocs(editor,{action:'template-save'}))}>{t('Save template')}</button><button onClick={()=>run(()=>{editor.chain().focus().unsetBold().unsetItalic().unsetUnderline().unsetStrike().unsetCode().unsetHighlight().unsetColor().unsetBackgroundColor().unsetFontFamily().unsetFontSize().run();})}>{t('Clear format')}</button></div>
+    </div>}
   </Anchored>;
 }

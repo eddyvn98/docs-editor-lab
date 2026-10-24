@@ -21,6 +21,15 @@ import { CodeBlockTools } from './CodeBlockTools';
 import { InlineSheet } from './InlineSheet';
 import { DocsToc, DocsTimeline, DocsMermaid } from './DocsVisualBlocks';
 import { ToggleBlock, PageBreak } from './features/AdvancedBlocks';
+import { DocumentMetadata } from './docs-ui/DocumentMetadata';
+import { BlockSelectionExtension } from './docs-ui/BlockSelectionExtension';
+import { DocsHeading } from './docs-content/DocsHeading';
+import { MediaBlock } from './docs-content/MediaBlock';
+import { ImageGallery } from './docs-content/ImageGallery';
+import { Equation, InlineEquation } from './docs-content/Equation';
+import { SyncedBlock } from './docs-content/SyncedBlock';
+import { Suggestions, SuggestionMark } from './docs-content/Suggestions';
+import { ClipboardClean } from './docs-content/ClipboardClean';
 import { starterContent } from './sampleContent';
 import { validateDocument } from './contentIO';
 import { DOCUMENT_KEY, RECOVERY_KEY } from './storage';
@@ -29,27 +38,28 @@ export { starterContent } from './sampleContent';
 export const STORAGE_KEY = DOCUMENT_KEY;
 export let startupIssue = '';
 export const extensions = [
-  StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: false }),
+  StarterKit.configure({ heading: false, link: false }), DocsHeading,
   Link.configure({ openOnClick: false, autolink: true }),
   DocumentImage.configure({ inline: false, allowBase64: true }), CalloutBlock,
   TableKit.configure({ table: { resizable: true } }), TaskList, TaskItem.configure({ nested: true }),
   TextAlign.configure({ types: ['paragraph', 'heading'] }), Highlight.configure({ multicolor: true }),
   TextStyleKit, CommentMark, Column, Columns, BlockIdentity, SearchHighlights, HeadingFolding,
-  DocumentAppearance, BlockAppearance, CodeBlockTools, ToggleBlock, PageBreak, InlineSheet, DocsToc, DocsTimeline, DocsMermaid,
+  DocumentAppearance, BlockAppearance, CodeBlockTools, ToggleBlock, PageBreak,
+  // Keep the legacy schema for existing documents; Sheets is not offered in the Docs UI.
+  InlineSheet, DocsToc, DocsTimeline, DocsMermaid,
+  DocumentMetadata, BlockSelectionExtension, MediaBlock, ImageGallery, Equation, InlineEquation,
+  SyncedBlock, SuggestionMark, Suggestions, ClipboardClean,
 ];
 export function readLocalDocument(): string | JSONContent {
-  startupIssue = '';
-  let raw: string | null = null;
+  startupIssue = ''; let raw: string | null = null;
   try {
-    const savedSession = localStorage.getItem(SESSION_KEY);
-    raw = savedSession ?? localStorage.getItem(DOCUMENT_KEY);
+    const savedSession = localStorage.getItem(SESSION_KEY); raw = savedSession ?? localStorage.getItem(DOCUMENT_KEY);
     if (!raw) return starterContent;
-    const parsed = JSON.parse(raw) as unknown;
-    const doc = savedSession ? (parsed as { doc?: unknown }).doc : parsed;
+    const parsed = JSON.parse(raw) as unknown, doc = savedSession ? (parsed as { doc?: unknown }).doc : parsed;
     return validateDocument(doc, { schema: getSchema(extensions) });
   } catch {
     startupIssue = raw ? 'The saved document could not be loaded. Autosave is paused; download the recovery data before keeping this new copy.' : 'Browser storage is unavailable. Export JSON before closing.';
-    if (raw) { try { localStorage.setItem(RECOVERY_KEY, raw); } catch { /* Keep the original untouched. */ } }
+    if (raw) { try { localStorage.setItem(RECOVERY_KEY, raw); } catch { /* Preserve the original on storage failure. */ } }
     return starterContent;
   }
 }
