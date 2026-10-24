@@ -54,7 +54,7 @@ export function InsertPalette({ editor, onClose, afterPos }: { editor: Editor; o
         }}/></div>
       <div className="insert-options docs-insert-options" id={listId} role="listbox" aria-label="Block types">{items.map((item, i) => <div key={item.id} role="presentation">
         {(!i || blockGroup(item.id) !== blockGroup(items[i - 1].id)) && <div className="docs-menu-group" role="presentation">{t(blockGroup(item.id))}</div>}
-        <button type="button" role="option" data-insert-id={item.id} aria-selected={selected?.id === item.id} id={`${listId}-${item.id}`} onMouseEnter={() => setIndex(i)} onClick={() => pick(item.id)}><BlockIcon id={item.id}/><span><strong>{t(item.label)}</strong><small>{t(blockDescriptions[item.id] || '')}</small></span></button>
+        <button type="button" role="option" aria-selected={selected?.id === item.id} id={`${listId}-${item.id}`} onMouseEnter={() => setIndex(i)} onClick={() => pick(item.id)}><BlockIcon id={item.id}/><span><strong>{t(item.label)}</strong><small>{t(blockDescriptions[item.id] || '')}</small></span></button>
       </div>)}{!items.length && <p>{t('No matching blocks')}</p>}</div>
     </>}
     {error && <p className="docs-error" role="alert">{error}</p>}

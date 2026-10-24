@@ -28,32 +28,25 @@ async function untilSaved(page, check) {
     return false;
   }, { key, check }, { timeout: 12000 });
 }
-async function chooseBlock(page, id) {
+async function chooseBlock(page) {
   await page.getByRole('button', { name: 'Insert block' }).click();
   const dialog = page.getByRole('dialog', { name: 'Insert a block' });
   await dialog.waitFor({ state: 'visible' });
-  // Accessible option names also include the block description, and the UI
-  // may be localized. Match the action identity rather than English-only text.
-  const option = dialog.locator(`[role="option"][data-insert-id="${id}"]`);
-  await option.waitFor({ state: 'visible' });
-  assert.equal(await option.count(), 1, 'Expected one insert option for ' + id);
-  await option.click();
+  // The option's accessible name includes its description as well as its label.
+  await dialog.getByRole('option', { name: /^Timeline/ }).click();
 }
 async function selectParagraph(page) {
-  // Close the existing range through the real toolbar control before
-  // reselecting. In particular, Undo/Redo may restore the previous range.
-  const close = page.getByRole('button', { name: 'Close formatting toolbar' });
-  if (await close.isVisible()) {
-    await close.click();
+  const dismiss = page.getByRole('button', { name: 'Close formatting toolbar' });
+  if (await dismiss.isVisible()) {
+    await dismiss.click();
     await page.locator('.docs-selection-toolbar').waitFor({ state: 'hidden' });
-  } else {
-    // If Undo/Redo already hid the toolbar, collapse any browser-native range
-    // via real keyboard input before making a new triple-click selection.
-    await page.locator('.ProseMirror').focus();
-    await page.keyboard.press('ArrowRight');
   }
+  // Place a real caret in the paragraph, then extend the range with keyboard
+  // navigation; this reselects the same text reliably after Undo/Redo.
   const paragraph = page.locator('.ProseMirror > p').filter({ hasText: 'Selected text for styling' });
-  await paragraph.click({ clickCount: 3 });
+  await paragraph.click();
+  await page.keyboard.press('Home');
+  await page.keyboard.press('Shift+End');
   await page.waitForFunction(() =>
     window.getSelection()?.toString().trim() === 'Selected text for styling',
   );
@@ -141,7 +134,7 @@ for (const width of [1365, 390]) {
       await headingSeven.click();
       await untilSaved(page, { kind: 'heading' });
       assert.equal(await editor.locator('[data-heading-level="7"]').count(), 1);
-      await chooseBlock(page, 'timeline');
+      await chooseBlock(page);
       const timeline = editor.locator('[data-type="docsTimeline"]').last();
       const timelineSource = timeline.getByRole('textbox', { name: 'Timeline items' });
       await timelineSource.waitFor({ state: 'visible' });

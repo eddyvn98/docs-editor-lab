@@ -79,22 +79,9 @@ export function useEditorUX(editor: Editor | null) {
           anchor: { element: null, point: { x: rect.left, y: rect.bottom }, mode: 'caret', from: s.from } });
       }
     };
-    // Native reselection can reuse the same ProseMirror range after Undo/Redo.
-    // Refresh the floating toolbar on actual browser selection changes as well.
-    let nativeFrame = 0;
-    const nativeSelection = () => {
-      cancelAnimationFrame(nativeFrame);
-      nativeFrame = requestAnimationFrame(() => {
-        const anchor = window.getSelection()?.anchorNode;
-        if (anchor && editor.view.dom.contains(anchor)) trackSelection();
-      });
-    };
     editor.on('transaction', transaction); editor.on('update', slash); editor.on('selectionUpdate', selection);
-    document.addEventListener('selectionchange', nativeSelection);
     document.addEventListener('pointerdown', outside, true); document.addEventListener('keydown', key);
     return () => {
-      cancelAnimationFrame(nativeFrame);
-      document.removeEventListener('selectionchange', nativeSelection);
       editor.view.dom.removeEventListener(DOCS_REQUEST, openDialog);
       editor.off('transaction', transaction); editor.off('update', slash); editor.off('selectionUpdate', selection);
       document.removeEventListener('pointerdown', outside, true); document.removeEventListener('keydown', key);
