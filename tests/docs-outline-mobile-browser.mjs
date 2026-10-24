@@ -28,7 +28,11 @@ for (const width of [1365, 390]) {
       }
       await panel.locator('button[title="Target section"]').click();
       assert.equal(await panel.isVisible(), width > 1000, 'Mobile closes navigation after choosing a heading; desktop keeps its outline');
-      if (width <= 1000) assert.equal(await page.getByRole('button', { name: 'Close document panels' }).count(), 0);
+      if (width <= 1000) {
+        assert.equal(await page.getByRole('button', { name: 'Close document panels' }).count(), 0);
+        assert.equal(await page.locator('.ProseMirror').evaluate(editor => document.activeElement === editor), true,
+          'After mobile navigation the editor should regain keyboard focus');
+      }
       await context.close();
     } finally { await browser.close(); }
   });

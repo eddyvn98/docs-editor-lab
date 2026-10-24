@@ -77,14 +77,7 @@ export const HeadingFolding = Extension.create({
           return build(next.doc, ids);
         },
       },
-      props: { decorations: state => foldingKey.getState(state)?.decorations ?? DecorationSet.empty,
-        handleKeyDown(view, event) {
-          if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
-            view.dispatch(view.state.tr.setMeta(foldingKey, { all: false }));
-          }
-          return false;
-        },
-      },
+      props: { decorations: state => foldingKey.getState(state)?.decorations ?? DecorationSet.empty },
       view() { return { update(view, previous) {
         const next = foldingKey.getState(view.state), before = foldingKey.getState(previous);
         if (next === before || (next?.ids.size === before?.ids.size && [...(next?.ids || [])].every(id => before?.ids.has(id)))) return;
