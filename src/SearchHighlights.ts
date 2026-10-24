@@ -15,11 +15,12 @@ export const SearchHighlights = Extension.create({
         const next = tr.getMeta(searchKey) as Omit<SearchState, 'decorations'> | undefined;
         if (!next && !tr.docChanged) return previous;
         const value = next || previous;
-        const decorations = DecorationSet.create(tr.doc, documentMatches(tr.doc, value.query, value).map((range, index) =>
+        const options: SearchOptions = { caseSensitive: value.caseSensitive, wholeWord: value.wholeWord };
+        const decorations = DecorationSet.create(tr.doc, documentMatches(tr.doc, value.query, options).map((range, index) =>
           Decoration.inline(range.from, range.to, { class: index === value.current ? 'search-match search-current' : 'search-match' })));
         return { ...value, decorations };
       },
     },
-    props: { decorations: state => searchKey.getState(state)?.decorations || null },
+    props: { decorations: state => searchKey.getState(state)?.decorations ?? DecorationSet.empty },
   })]; },
 });

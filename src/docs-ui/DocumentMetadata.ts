@@ -1,6 +1,6 @@
 import { Extension } from '@tiptap/core';
 import type { Editor } from '@tiptap/react';
-import { Plugin } from '@tiptap/pm/state';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { closeHistory } from '@tiptap/pm/history';
 import { safeImage } from '../safety';
 export const covers: Record<string, string> = {
@@ -37,7 +37,7 @@ export const DocumentMetadata = Extension.create({
   onCreate() {
     if (!this.editor.state.doc.attrs.docsId) this.editor.view.dispatch(this.editor.state.tr.setDocAttribute('docsId', crypto.randomUUID()).setMeta('addToHistory', false).setMeta('docs-metadata', true));
   },
-  addProseMirrorPlugins() { return [new Plugin({
+  addProseMirrorPlugins() { return [new Plugin({ key: new PluginKey('docsDocumentMetadataPlugin'),
     appendTransaction(transactions, _old, state) {
       if (!transactions.some(tr => tr.docChanged && !tr.getMeta('docs-metadata'))) return null;
       const tr = state.tr.setMeta('docs-metadata', true).setMeta('addToHistory', false);

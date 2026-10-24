@@ -15,7 +15,7 @@ export function applySlash(editor: Editor, popup: Popup, id: string, rows = 3, c
   try {
     const tr = closeHistory(editor.state.tr).delete(command.from, command.to), clean = tr.doc.nodeAt(popup.pos); if (!clean) return false;
     if (id === 'templates') { tr.setSelection(Selection.near(tr.doc.resolve(command.from))); editor.view.dispatch(tr); return true; }
-    let draft = blankBlock(id, rows, columns) as JSONContent | null; if (!draft) return false;
+    let draft = blankBlock(id, rows, columns, true) as JSONContent | null; if (!draft) return false;
     if (id === 'inline-equation') { const node = editor.schema.nodeFromJSON(draft); tr.insert(command.from, node).setSelection(Selection.near(tr.doc.resolve(command.from + node.nodeSize))); editor.view.dispatch(tr); editor.view.focus(); return true; }
     const textLike = id === 'paragraph' || /^h[1-9]$/.test(id), converts = textLike || ['bullet','numbered','task','quote','callout','code','toggle'].includes(id);
     if (converts) {

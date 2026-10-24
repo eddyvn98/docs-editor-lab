@@ -22,7 +22,7 @@ function GalleryView({ node, editor, getPos, updateAttributes }: NodeViewProps) 
       const sources = await Promise.all(list.map(file => blobDataURL(file))), pos = getPos();
       if (!alive.current || editor.isDestroyed || !editor.isEditable || request !== token.current || editor.state.doc.attrs.docsId !== documentId || typeof pos !== 'number') return;
       const current = editor.state.doc.nodeAt(pos);
-      if (current?.attrs.blockId !== id || current.type.name !== 'imageGallery' || current.childCount + sources.length > 12) throw new Error('The gallery changed. Choose the images again.');
+      if (!current || current.attrs.blockId !== id || current.type.name !== 'imageGallery' || current.childCount + sources.length > 12) throw new Error('The gallery changed. Choose the images again.');
       const images = sources.map((src, index) => { if (!safeImage(src)) throw new Error('Image data is not supported.'); return editor.schema.nodes.image.create({ src, alt: list[index].name, caption: '', width: '100%' }); });
       editor.view.dispatch(closeHistory(editor.state.tr).insert(pos + current.nodeSize - 1, images));
     } catch (cause) { if (alive.current && !editor.isDestroyed) setError(cause instanceof Error ? cause.message : 'Images could not be added.'); }

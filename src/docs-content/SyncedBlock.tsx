@@ -1,6 +1,6 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import type { JSONContent } from '@tiptap/core';
-import { Plugin } from '@tiptap/pm/state';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { closeHistory } from '@tiptap/pm/history';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { NodeViewContent, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
@@ -41,7 +41,7 @@ export const SyncedBlock = Node.create({
   renderHTML({ HTMLAttributes }) { return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'syncedBlock', class: 'docs-synced-block' }), 0]; },
   addNodeView() { return ReactNodeViewRenderer(SyncedView); },
   onCreate() { this.editor.view.dispatch(this.editor.state.tr.setMeta('initializeSyncedBlocks', true).setMeta('addToHistory', false)); },
-  addProseMirrorPlugins() { return [new Plugin({
+  addProseMirrorPlugins() { return [new Plugin({ key: new PluginKey('docsSyncedBlockPlugin'),
     appendTransaction(transactions, oldState, state) {
       const initialize = transactions.some(tr => tr.getMeta('initializeSyncedBlocks'));
       if (!initialize && !transactions.some(tr => tr.docChanged && !tr.getMeta('synced-propagation') && tr.getMeta('addToHistory') !== false)) return null;

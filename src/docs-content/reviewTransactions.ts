@@ -20,7 +20,8 @@ export function annotateChange(before: PMNode, state: EditorState) {
   const overlap = start - Math.min(end.a, end.b), a = end.a + Math.max(0, overlap), b = end.b + Math.max(0, overlap);
   const oldStart = before.resolve(start), oldEnd = before.resolve(a), newStart = after.resolve(start), newEnd = after.resolve(b);
   const tr = state.tr.setMeta('suggestion-annotation', true), type = state.schema.marks.suggestion;
-  let id = crypto.randomUUID(), at = new Date().toISOString();
+  type UUID = ReturnType<typeof crypto.randomUUID>;
+  let id: UUID = crypto.randomUUID(), at = new Date().toISOString();
   const pendingRoot = (position: typeof oldStart) => position.depth ? position.node(1) : null;
   const previousRoot = pendingRoot(oldStart), nextRoot = pendingRoot(newStart);
   // Editing an already-proposed block updates that proposal, rather than nesting revisions.
@@ -28,7 +29,7 @@ export function annotateChange(before: PMNode, state: EditorState) {
   if (oldStart.parent.isTextblock && oldStart.sameParent(oldEnd) && newStart.parent.isTextblock && newStart.sameParent(newEnd) && oldStart.parent.type === newStart.parent.type && type && oldStart.parent.type.allowsMarkType(type) && newStart.parent.type.allowsMarkType(type)) {
     const old = before.slice(start, a).content, removed: PMNode[] = [];
     const nearby = old.firstChild?.marks.find(mark => mark.type === type && mark.attrs.kind === 'insert') || newStart.nodeBefore?.marks.find(mark => mark.type === type && mark.attrs.kind === 'insert');
-    if (nearby) { id = String(nearby.attrs.id); at = String(nearby.attrs.at); }
+    if (nearby) { id = String(nearby.attrs.id) as UUID; at = String(nearby.attrs.at); }
     old.forEach(node => {
       const pending = node.marks.find(mark => mark.type === type);
       if (pending?.attrs.kind === 'insert') return;
@@ -45,7 +46,7 @@ export function annotateChange(before: PMNode, state: EditorState) {
   // Every root block in the schema has these optional review attributes.
   if ([...oldNodes, ...newNodes].some(node => !Object.prototype.hasOwnProperty.call(node.attrs, 'reviewId'))) return null;
   const previous = oldNodes.find(node => node.attrs.reviewKind === 'insert');
-  if (previous) { id = String(previous.attrs.reviewId); at = String(previous.attrs.reviewAt); }
+  if (previous) { id = String(previous.attrs.reviewId) as UUID; at = String(previous.attrs.reviewAt); }
   const deleted = oldNodes.filter(node => node.attrs.reviewKind !== 'insert').map(node => node.attrs.reviewKind === 'delete' ? node : node.type.create({ ...node.attrs, reviewId: id, reviewKind: 'delete', reviewAt: at }, node.content, node.marks));
   const inserted = newNodes.map(node => node.type.create({ ...node.attrs, reviewId: id, reviewKind: 'insert', reviewAt: at }, node.content, node.marks));
   const keptSize = deleted.reduce((sum, node) => sum + node.nodeSize, 0), relative = Math.max(0, state.selection.head - newRange.from);

@@ -1,5 +1,5 @@
 import { Extension } from '@tiptap/core';
-import { Plugin } from '@tiptap/pm/state';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Fragment, Slice } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
 /** Ordinary paste copies content, not another document's comment/review identities. */
@@ -7,7 +7,7 @@ export const ClipboardClean = Extension.create({
   name: 'docsClipboardClean',
   addProseMirrorPlugins() {
     const editor = this.editor;
-    return [new Plugin({ props: { transformPasted(slice) {
+    return [new Plugin({ key: new PluginKey('docsClipboardCleanPlugin'), props: { transformPasted(slice) {
       const insideSync = Array.from({ length: editor.state.selection.$from.depth }, (_, index) => editor.state.selection.$from.node(index + 1).type.name).includes('syncedBlock');
       function clean(node: PMNode, inSync: boolean): PMNode[] {
         if (node.attrs.reviewKind === 'delete' || node.marks.some(mark => mark.type.name === 'suggestion' && mark.attrs.kind === 'delete')) return [];

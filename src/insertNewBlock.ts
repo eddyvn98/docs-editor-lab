@@ -7,7 +7,7 @@ import { foldedSpanEnd } from './outlineModel';
 /** Preserve existing content and insert a complete block as one undoable edit. */
 export function insertNewBlock(editor: Editor, id: string, rows = 3, columns = 3, afterPos?: number, reuseTarget = false): boolean {
   if (!editor.isEditable) return false;
-  const draft = blankBlock(id, rows, columns); if (!draft) return false;
+  const draft = blankBlock(id, rows, columns, true); if (!draft) return false;
   const { selection, doc } = editor.state;
   if (id === 'synced' && Array.from({ length: selection.$from.depth }, (_, i) => selection.$from.node(i + 1).type.name).includes('syncedBlock')) return false;
   if (id === 'inline-equation' && afterPos === undefined && selection.$to.parent.isTextblock) {

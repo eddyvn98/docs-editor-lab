@@ -1,5 +1,5 @@
 import { Extension } from '@tiptap/core';
-import { Plugin, Selection } from '@tiptap/pm/state';
+import { Plugin, PluginKey, Selection } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { BlockRangeSelection } from './blockSelection';
 import { batchAction } from './blockBatchActions';
@@ -8,7 +8,7 @@ export const BlockSelectionExtension = Extension.create({
   name: 'docsBlockSelection',
   addProseMirrorPlugins() {
     const editor = this.editor;
-    return [new Plugin({ props: {
+    return [new Plugin({ key: new PluginKey('docsBlockSelectionPlugin'), props: {
       decorations(state) {
         if (!(state.selection instanceof BlockRangeSelection)) return null;
         const decorations: Decoration[] = [];
