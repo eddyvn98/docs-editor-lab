@@ -17,17 +17,33 @@ Validation constraints: the GitHub connector can read and write, but the shell c
 
 ## Reproducible local browser acceptance
 
-Playwright is intentionally not part of production dependencies, nor is it installed by CI. On a clean clone with Node.js 22 or later and npm:
+Playwright is deliberately optional and is not declared in `package.json`.
+`npm test` discovers only `tests/*.test.mjs`, which must work after
+`npm ci` without Playwright. Browser-only suites use the `-browser.mjs`
+suffix so they are run explicitly rather than by the unit-test glob.
+
+Use a clean isolated checkout (Node.js 22 or later). Terminal 1:
 
 ```bash
 npm ci
 npm test
 npm run build
-npm install --no-save --package-lock=false playwright@1.56.1
+# Install optional local browser QA tools without changing committed manifests:
+npm install --no-save --package-lock=false playwright@1.64.1
 npx playwright install chromium
-npm run dev -- --port 5173
-# In another terminal:
-EDITOR_URL=http://127.0.0.1:5173 node tests/docs-parity-browser.mjs
+npm run dev -- --port 4184
 ```
 
-The suite runs at 1365px and 390px. Playwright is a local QA prerequisite; do not interpret an unavailable dependency or browser as a passing test. No Board/Kanban or workflow changes.
+Once the dev server responds, terminal 2 (same checkout):
+
+```bash
+EDITOR_URL=http://127.0.0.1:4184/ node --test tests/docs-selection-menu-browser.mjs
+EDITOR_URL=http://127.0.0.1:4184/ node tests/docs-parity-browser.mjs
+EDITOR_URL=http://127.0.0.1:4184/ node --test tests/gutter-drag-browser.mjs
+```
+
+The selection/menu and Docs parity suites exercise 1365px and 390px;
+the gutter-drag suite uses its own 1280px viewport. These tests exercise
+the served app; a missing Playwright installation, Chromium binary, or
+local server is not a PASS. The optional dependency must not be committed
+to `package.json` or the lockfile. No CI or out-of-scope product changes.
