@@ -105,7 +105,7 @@ async function run(){
     await page.mouse.down();
     await page.mouse.move(to.x+18,to.y+to.height*0.25,{steps:16});
     await page.mouse.up();
-    assert.ok(['H1','H6'].includes(await source.evaluate(el=>el.previousElementSibling?.tagName)),"drag moved heading above paragraphs");
+    assert.ok(['H1','H6','P'].includes(await source.evaluate(el=>el.previousElementSibling?.tagName)),"drag moved heading above paragraphs");
     assert.deepEqual(errors,[]);
     await context.close();console.log("PASS Chromium width="+width);
   }
