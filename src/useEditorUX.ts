@@ -137,7 +137,7 @@ export function useEditorUX(editor: Editor | null) {
   };
   const openGutter = (type: 'menu' | 'insert', entry: Hover) => {
     if (!editor) return;
-    if (drag.suppressClick.current) { drag.suppressClick.current = false; return; }
+    if (type === 'menu' && drag.suppressClick.current) { drag.suppressClick.current = false; return; }
     const node = editor.state.doc.nodeAt(entry.pos), selection = editor.state.selection;
     if (node && (type === 'insert' || selection.from < entry.pos || selection.to > entry.pos + node.nodeSize)) focusBlock(editor, entry.pos);
     const r = entry.element.getBoundingClientRect();

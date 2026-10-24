@@ -64,9 +64,16 @@ export function useBlockDrag(editor: Editor | null, hover: Hover | null, done: (
         if (range) moveBlockRange(editor, range.from, range.to, destination);
         else moveBlock(editor, source, destination);
       }
-      if (moved) done();
+      if (moved) {
+        setTimeout(() => { suppressClick.current = false; }, 0);
+        done();
+      }
     };
-    const cancel = () => { suppressClick.current = moved; clear(); done(); };
+    const cancel = () => {
+      suppressClick.current = moved; clear();
+      if (moved) setTimeout(() => { suppressClick.current = false; }, 0);
+      done();
+    };
     const escape = (next: KeyboardEvent) => { if (next.key === 'Escape') { next.preventDefault(); cancel(); } };
     cleanup.current = clear;
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', end);
