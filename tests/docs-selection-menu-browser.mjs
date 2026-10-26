@@ -262,3 +262,33 @@ for (const width of [1365, 390]) {
     } finally { await browser.close(); }
   });
 }
+
+for (const width of [1365, 390]) {
+  test(`Applied links persist after reload at ${width}px`, async () => {
+    const browser = await chromium.launch();
+    try {
+      const context = await browser.newContext({ viewport: { width, height: 900 } });
+      await context.addInitScript(({ key, starting }) => {
+        if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(starting));
+      }, { key, starting });
+      const page = await context.newPage();
+      await page.goto(url, { waitUntil: 'networkidle' });
+      const editor = page.locator('.ProseMirror');
+      await editor.waitFor({ state: 'visible' });
+      await selectParagraph(page);
+      const toolbar = page.getByRole('toolbar', { name: 'Selection formatting' });
+      await toolbar.getByRole('button', { name: 'Link' }).click();
+      const dialog = page.getByRole('dialog', { name: 'Edit link' });
+      await dialog.getByLabel('Link URL').fill('https://example.test/persisted');
+      await dialog.getByRole('button', { name: 'Save' }).click();
+      await untilSaved(page, { kind: 'link', href: 'https://example.test/persisted', present: true });
+      const linkedDocument = (await saved(page)).doc;
+      await page.reload({ waitUntil: 'networkidle' });
+      const restoredLink = page.locator('.ProseMirror a[href="https://example.test/persisted"]');
+      await restoredLink.waitFor({ state: 'visible' });
+      assert.equal(await restoredLink.innerText(), 'Selected text for styling');
+      assert.deepEqual((await saved(page)).doc, linkedDocument, 'The saved link document survives reload');
+      await context.close();
+    } finally { await browser.close(); }
+  });
+}

@@ -94,6 +94,15 @@ for (const width of [1365, 390]) {
       await page.keyboard.type('New paragraph');
       assert.match(await editor.locator(':scope > p').nth(1).innerText(), /New paragraph/);
 
+      // Backspace at the start of a paragraph joins it with the previous paragraph.
+      const nextParagraph = editor.locator(':scope > p').nth(2);
+      await clickCaret(page, nextParagraph, 0);
+      await page.keyboard.press('Backspace');
+      const joinedParagraph = editor.locator(':scope > p').nth(1);
+      assert.equal(await joinedParagraph.innerText(), 'New paragraphSecond paragraph');
+      assert.equal(await editor.locator(':scope > p').count(), 3);
+      await assertCaret(page, joinedParagraph, 'New paragraph'.length);
+
       // Nest and lift a checklist item with Tab/Shift+Tab.
       const tasks = editor.locator('ul[data-type="taskList"] li[data-checked]');
       await clickCaret(page, tasks.nth(1).locator('p'), 0);
