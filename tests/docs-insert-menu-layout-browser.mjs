@@ -24,7 +24,7 @@ try {
     assert.match(await palette.innerText(), /Common blocks|Thường dùng/);
     assert.equal(await palette.getByRole('option', { name: 'Checklist' }).count(), 1, 'Checklist must not appear twice in one insert menu');
     assert.equal(await palette.getByRole('option', { name: 'Callout' }).count(), 1, 'Callout must not appear twice');
-    assert.equal(await palette.getByRole('option', { name: 'Equation' }).count(), 1, 'Equation must not appear twice');
+    assert.equal(await palette.getByRole('option', { name: 'Equation', exact: true }).count(), 1, 'Equation must not appear twice');
     assert.doesNotMatch(await palette.innerText(), /Sheets|Mermaid/);
     await palette.getByRole('combobox', { name: 'Search blocks' }).fill('table');
     await plusGrid.waitFor({ state: 'hidden' });
@@ -39,6 +39,7 @@ try {
     assert.equal(await slashMenu.locator('.docs-quick-insert [role="menuitem"]').count(), 18, 'slash menu shares the same quick block grid');
     assert.equal(await slashMenu.getByRole('menuitem', { name: 'Checklist', exact: true }).count(), 1, 'Slash Checklist is not duplicated');
     assert.equal(await slashMenu.getByRole('menuitem', { name: 'Callout', exact: true }).count(), 1, 'Slash Callout is not duplicated');
+    assert.equal(await slashMenu.getByRole('menuitem', { name: 'Equation', exact: true }).count(), 1, 'Slash Equation is not duplicated');
     assert.match(await slashMenu.innerText(), /Common blocks|Thường dùng/);
     assert.doesNotMatch(await slashMenu.innerText(), /Sheets|Mermaid/);
     await page.keyboard.press('Escape');

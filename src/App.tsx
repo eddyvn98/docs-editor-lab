@@ -15,6 +15,7 @@ import { executeAction } from './handleAction';
 import { useDocumentState } from './useDocumentState';
 import { useEditorShortcuts } from './useEditorShortcuts';
 import { handleEditorTab } from './docs-content/handleEditorTab';
+import { syncNativeCaret } from './docs-content/syncNativeCaret';
 import { handlePageBreakEditing } from './docs-content/handlePageBreakEditing';
 import { downloadText, RECOVERY_KEY } from './storage';
 import { sanitizeHTML } from './contentIO';
@@ -61,7 +62,10 @@ export default function App() {
       transformPastedHTML: sanitizeHTML,
       handleKeyDown(view, event) {
         const instance = editorRef.current;
-        if (instance?.isEditable) return handlePageBreakEditing(view, event) || handleEditorTab(instance, event);
+        if (instance?.isEditable) {
+          syncNativeCaret(instance, event);
+          return handlePageBreakEditing(view, event) || handleEditorTab(instance, event);
+        }
         if (instance?.isEditable !== false) return false;
         if ((event.ctrlKey || event.metaKey) && ['b','i','u','z','y','k','d','m','v','x'].includes(event.key.toLowerCase())) { event.preventDefault(); return true; }
         return false;
@@ -84,6 +88,19 @@ export default function App() {
     },
   });
   editorRef.current = editor;
+  useEffect(() => {
+    if (!editor) return;
+    // Read-only test instrumentation, opt-in per isolated QA browser context.
+    const qa = window as Window & { __docsQaInspect?: boolean; __docsQaSelection?: () => object };
+    if (!qa.__docsQaInspect) return;
+    qa.__docsQaSelection = () => {
+      const { selection } = editor.state, from = selection.$from, to = selection.$to;
+      return { from: selection.from, to: selection.to, fromParent: from.parent.type.name,
+        toParent: to.parent.type.name, fromStart: from.start(), toStart: to.start(),
+        fromOffset: from.parentOffset, toOffset: to.parentOffset, fromParentSize: from.parent.content.size };
+    };
+    return () => { delete qa.__docsQaSelection; };
+  }, [editor]);
   const docState = useDocumentState(editor, startupIssue);
   const { view, patchView } = useViewPreferences(editor), readOnly = view.mode === 'read';
   const ux = useEditorUX(readOnly ? null : editor);
@@ -183,6 +200,10 @@ export default function App() {
     onHelp={() => setHelp(true)} onComment={() => openDetail('comment')} notice={notice} floating={floating}>
     <div ref={frame} className="editor-frame" onMouseMove={event => { if (!readOnly) { clearTimeout(hoverTimer.current); ux.onMouseMove(event); } }} onMouseLeave={clearHover}
       onContextMenu={event => { if (readOnly) return; if (editor.state.selection instanceof BlockRangeSelection) { event.preventDefault(); ux.close(false); editor.view.dom.dispatchEvent(new CustomEvent('docs-batch-context', { detail: { x: event.clientX, y: event.clientY } })); } else ux.onContextMenu(event); }} onClick={contentClick} onDoubleClick={event => { showImage(event); }}
-      onDragOver={event => { if (event.dataTransfer.types.includes('Files')) event.preventDefault(); }} onPointerUp={() => { if (!readOnly) requestAnimationFrame(ux.trackSelection); }}><EditorContent editor={editor}/></div>
+      onDragOver={event => { if (event.dataTransfer.types.includes('Files')) event.preventDefault(); }} onPointerUp={event => { if (!readOnly && event.target instanceof Node && editor.view.dom.contains(event.target)) {
+        // ProseMirror can retain the previous block's caret after an actual click
+        // (especially following Tab indentation at narrow viewports).
+        requestAnimationFrame(() => { syncNativeCaret(editor); ux.trackSelection(); });
+      } }}><EditorContent editor={editor}/></div>
   </DocsShell>;
 }

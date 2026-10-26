@@ -79,3 +79,40 @@ loss. Do not hide the failure by increasing timeouts.
 A GitHub-only source patch may be pushed as an explicitly unverified QA candidate.
 Do not mark acceptance complete until the local build and affected browser
 suites pass on that exact commit. Never stage optional dependency files.
+
+
+## Docs core caret and source-vs-browser QA (gpt/docs-core-ux-continuation)
+
+Use the existing checkout and isolated browser fixtures. Do not reset or stage
+untracked dependency files. For the Docs-only scope:
+
+```bash
+npm run build
+npm test
+EDITOR_URL=http://127.0.0.1:4183/ node --test tests/docs-core-typing-browser.mjs
+EDITOR_URL=http://127.0.0.1:4183/ node --test tests/docs-core-surface-browser.mjs
+EDITOR_URL=http://127.0.0.1:4183/ node tests/docs-insert-menu-layout-browser.mjs
+TEST_BASE_URL=http://127.0.0.1:4183/ node tests/docs-surface-browser.mjs
+```
+
+The new focused core surface suite is intentionally separate from the legacy
+surface suite's template and crop flows. Do not declare the legacy suite PASS
+when it still times out outside this scope.
+
+A Mac Chrome test previously used Home + Shift+End to select a single paragraph.
+That keyboard sequence could select through the end of the document instead:
+ProseMirror 381..4732, 4351 characters, and scrollY jumped 7091. A paragraph
+locator.selectText() instead selected 381..478 only. Before converting to H3,
+assert the native selection is entirely within that paragraph and both
+ProseMirror endpoints share the same parent and boundary.
+
+The core typing suite uses actual pointer clicks at DOM Range offsets and
+asserts agreement between the native caret and ProseMirror state *before*
+Tab, Backspace, Delete or Enter. A test-only selection inspector is opt-in
+through window.__docsQaInspect in each isolated browser context. The editor
+never installs this inspector unless the QA context enables it.
+
+The local agent confirmed the H3 selection fix preserves Code language and
+Callout background/text, language/wrap/copy controls; this evidence was on a
+locally modified test fixture, not a PASS for this new commit. Execute the
+commands above on the new SHA before closing acceptance.

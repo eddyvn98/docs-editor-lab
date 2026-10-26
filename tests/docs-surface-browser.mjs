@@ -15,6 +15,7 @@ try {
   await ready(); browser = await chromium.launch({headless:true});
   for (const width of [1365,390]) {
     const context = await browser.newContext({viewport:{width,height:900}, permissions:['clipboard-read','clipboard-write']});
+    await context.addInitScript(() => { window.__docsQaInspect = true; });
     const page = await context.newPage(), errors=[];
     page.on('pageerror',e=>errors.push(e.message));
     await page.goto(origin); const editor=page.locator('.ProseMirror'); await editor.waitFor();
@@ -22,12 +23,36 @@ try {
     // Diagnose missing fixture immediately; do not mask a product regression with timeout.
     const initialCodeControls=await editor.getByLabel('Code language').count();
     assert.ok(initialCodeControls>0, 'The isolated Docs fixture must contain a real code block and its Code language control');
-    await editor.locator('> p').first().click();
-    await page.keyboard.press('Home'); await page.keyboard.press('Shift+End');
+    const targetParagraph=editor.locator('> p').first();
+    await targetParagraph.selectText();
+    const selection=await targetParagraph.evaluate(element => {
+      const native=window.getSelection(), pm=window.__docsQaSelection?.();
+      return { pm, nativeText:native?.toString() || '',
+        within: !!native?.anchorNode && !!native?.focusNode &&
+          element.contains(native.anchorNode) && element.contains(native.focusNode) };
+    });
+    assert.ok(selection.within, 'Selected text must stay inside the target paragraph');
+    assert.ok(selection.nativeText.startsWith('Bold'), 'QA selects only the intended formatted sample');
+    assert.equal(selection.pm?.fromParent, 'paragraph');
+    assert.equal(selection.pm?.toParent, 'paragraph');
+    assert.equal(selection.pm?.fromStart, selection.pm?.toStart, 'Never style multiple blocks');
+    assert.equal(selection.pm?.fromOffset, 0, 'Selection starts at the paragraph boundary');
+    assert.equal(selection.pm?.toOffset, selection.pm?.fromParentSize,
+      'Selection ends at the same paragraph boundary');
     await page.getByRole('toolbar',{name:'Selection formatting'}).waitFor();
     await page.getByLabel('Selected text style').selectOption('h3');
     assert.ok(await editor.locator('h3').count()>0);
     await page.keyboard.press('Escape');
+    // Convert-to-heading and Escape must not unmount the existing code NodeView.
+    const codeAfterHeading=await editor.getByLabel('Code language').count();
+    const diagnostic=await editor.evaluate(root => ({
+      codeViews: root.querySelectorAll('.document-code-block').length,
+      folded: root.querySelectorAll('.fold-hidden').length,
+      codeHidden: [...root.querySelectorAll('.document-code-block')].map(el =>
+        !!el.closest('.fold-hidden') || getComputedStyle(el).display === 'none'),
+    }));
+    assert.equal(codeAfterHeading,initialCodeControls,
+      'H3 conversion/Escape must retain code controls; diagnostics: '+JSON.stringify(diagnostic));
 
     await page.getByRole('button',{name:'Callout appearance',exact:true}).first().click();
     const calloutSettings=page.getByRole('group',{name:'Callout settings'});
