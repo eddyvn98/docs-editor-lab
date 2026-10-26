@@ -3,6 +3,25 @@ import type { PointerEvent } from 'react';
 import { GripVertical, Plus } from 'lucide-react';
 import type { Hover } from './targets';
 
+function firstContentCenter(element: HTMLElement) {
+  const title = element.querySelector<HTMLElement>('.toggle-summary input');
+  if (title) {
+    const rect = title.getBoundingClientRect();
+    if (rect.height) return rect.top + rect.height / 2;
+  }
+  const walker = element.ownerDocument.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  const range = element.ownerDocument.createRange();
+  let text: Node | null;
+  while ((text = walker.nextNode())) {
+    if (!text.textContent?.trim() || text.parentElement?.closest('[data-node-controls],button,[aria-hidden="true"]')) continue;
+    range.selectNodeContents(text);
+    const rect = range.getClientRects()[0];
+    if (rect?.height) return rect.top + rect.height / 2;
+  }
+  const rect = element.getBoundingClientRect();
+  return rect.top + rect.height / 2;
+}
+
 export function Gutter({ hover, onMenu, onInsert, onPointerDown, onLeave, onEnter }: {
   hover: Hover | null; onMenu: () => void; onInsert: () => void; onPointerDown: (event: PointerEvent<HTMLElement>) => void; onLeave?: () => void; onEnter?: () => void;
 }) {
@@ -11,8 +30,7 @@ export function Gutter({ hover, onMenu, onInsert, onPointerDown, onLeave, onEnte
     if (!hover) return;
     const refresh = () => {
       const rect = hover.element.getBoundingClientRect();
-      const isTextBlock = hover.element.matches('p,h1,h2,h3,h4,h5,h6,li,blockquote');
-      setPoint({ left: Math.max(4, rect.left - 52), top: rect.top + (isTextBlock ? -3 : Math.min(6, Math.max(0, rect.height - 28))) });
+      setPoint({ left: Math.max(4, rect.left - 52), top: firstContentCenter(hover.element) - 16 });
     };
     refresh(); window.addEventListener('scroll', refresh, true); window.addEventListener('resize', refresh);
     const observer = new ResizeObserver(refresh); observer.observe(hover.element);
