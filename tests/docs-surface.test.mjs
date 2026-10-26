@@ -6,6 +6,7 @@ import { cleanTemplate, decodeTemplates, encodeTemplates, templateName, template
 import { tokenizeCode, normalizeLanguage, codeLanguages } from '../src/codeTokens.ts';
 import { hexColor, blockIndent, blockCSS, calloutIcon, calloutIcons } from '../src/blockStyleModel.ts';
 import { actionsFor, filterInserts } from '../src/logic.ts';
+import { normalizeDelimitedMathBlocks } from '../src/docs-content/mathImport.ts';
 
 test('slash at a blank paragraph', () => assert.deepEqual(findSlash('/heading'), {query:'heading',from:0,to:8,wholeLine:true}));
 test('slash after ordinary text preserves its prefix', () => assert.deepEqual(findSlash('Keep this /table'), {query:'table',from:10,to:16,wholeLine:false}));
@@ -14,6 +15,18 @@ test('caret offsets use UTF-16 including emoji', () => assert.deepEqual(findSlas
 test('URLs and path separators do not trigger the menu', () => { for (const s of ['https://host/code','/one/two','a/b','word/heading']) assert.equal(findSlash(s),null,s); });
 test('tab and nonbreaking space can trigger slash', () => { assert.equal(findSlash('a\t/table').from,2); assert.equal(findSlash('a\u00a0/table').from,2); });
 test('a space-only prefix is treated as a blank line', () => assert.equal(findSlash('   /image ').wholeLine,true));
+test('standalone display-math paragraphs become equation blocks without changing inline prose', () => {
+  const doc={type:'doc',content:[
+    {type:'paragraph',content:[{type:'text',text:'$$\\frac{active\\_users}{eligible\\_users}$$'}]},
+    {type:'paragraph',content:[{type:'text',text:'Keep $$this$$ as prose.'}]},
+    {type:'codeBlock',content:[{type:'text',text:'$$leave code$$'}]},
+  ]};
+  const normalized=normalizeDelimitedMathBlocks(doc);
+  assert.deepEqual(normalized.content[0],{type:'equation',attrs:{latex:'\\frac{active\\_users}{eligible\\_users}'}});
+  assert.equal(normalized.content[1],doc.content[1]);
+  assert.equal(normalized.content[2],doc.content[2]);
+  assert.equal(doc.content[0].type,'paragraph','normalization must not mutate saved content');
+});
 test('slash queries accept Unicode letters', () => assert.equal(findSlash('/\u0111o\u1ea1n').query,'\u0111o\u1ea1n'));
 test('bad caret positions are refused', () => { for (const p of [-1,99,NaN,1.3]) assert.equal(findSlash('/text',p),null); });
 test('queries stop at punctuation and newlines', () => { assert.equal(findSlash('/bad!'),null); assert.equal(findSlash('/one\ntwo'),null); });

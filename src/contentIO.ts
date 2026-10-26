@@ -3,8 +3,10 @@ import type { JSONContent } from '@tiptap/core';
 import { safeImage, safeLink, escapeHTML, clampImageWidth } from './safety';
 import { isDocument } from './documentUtils';
 import { safeMediaURL, validAssetId } from './docs-content/assets';
+import { normalizeDelimitedMathBlocks } from './docs-content/mathImport';
 export function validateDocument(value: unknown, editor: Pick<Editor, 'schema'>): JSONContent {
   if (!isDocument(value)) throw new Error('This file is not a TipTap document.');
+  value = normalizeDelimitedMathBlocks(value as JSONContent);
   let count = 0;
   function visit(item: unknown, depth: number, insideSync = false): void {
     if (depth > 60 || ++count > 30000) throw new Error('Document is too complex to import safely.');
