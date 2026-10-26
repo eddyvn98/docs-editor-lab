@@ -5,8 +5,8 @@ import type { Editor } from "@tiptap/react";
 import type { Anchor } from "./targets";
 import { placeOverlay } from "./logic";
 
-export function Anchored({ anchor, editor, children, className = "", wide = false }: {
-  anchor: Anchor; editor: Editor; children: ReactNode; className?: string; wide?: boolean;
+export function Anchored({ anchor, editor, children, className = "", wide = false, overflowVisible = false }: {
+  anchor: Anchor; editor: Editor; children: ReactNode; className?: string; wide?: boolean; overflowVisible?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [point, setPoint] = useState({ x: 0, y: 0, ready: false });
@@ -44,7 +44,8 @@ export function Anchored({ anchor, editor, children, className = "", wide = fals
       }
       const next = placeOverlay({ x: desired.x - origin.x, y: desired.y - origin.y },
         { width: panel.offsetWidth, height: panel.offsetHeight }, { width, height });
-      setPoint({ x: next.x + origin.x, y: next.y + origin.y, ready: true });
+      const x = next.x + origin.x, y = next.y + origin.y;
+      setPoint(current => current.ready && current.x === x && current.y === y ? current : { x, y, ready: true });
     };
     const schedule = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(refresh); };
     refresh();
@@ -63,7 +64,7 @@ export function Anchored({ anchor, editor, children, className = "", wide = fals
     };
   }, [anchor, editor]);
   return createPortal(<div ref={ref} data-ux-overlay className={`ux-floating ${wide ? "wide " : ""}${className}`}
-    style={{ left: point.x, top: point.y, visibility: point.ready ? "visible" : "hidden", maxHeight: "calc(100dvh - 16px)", overflowY: "auto" }}>
+    style={{ left: point.x, top: point.y, visibility: point.ready ? "visible" : "hidden", maxHeight: "calc(100dvh - 16px)", overflowY: overflowVisible ? "visible" : "auto" }}>
     {children}
   </div>, document.body);
 }

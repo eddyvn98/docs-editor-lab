@@ -19,19 +19,20 @@ export function useEditorUX(editor: Editor | null) {
   const drag = useBlockDrag(editor, hover, () => setHover(null));
   const commit = useCallback((value: Popup | null) => { current.current = value; setPopupState(value); }, []);
   const setPopup = useCallback((value: Popup | null) => { commit(value && editor ? captureTarget(editor, value) : value); }, [editor, commit]);
-  const close = useCallback((restore = false) => {
-    const value = current.current;
-    if (value?.type === 'slash') dismissed.current = `${value.pos}:${value.command?.from}:${value.query || ''}`;
-    commit(null); setSelectionAnchor(null);
-    if (restore && value && editor) restoreTarget(editor, value);
-  }, [editor, commit]);
   const trackSelection = useCallback(() => {
     if (!editor || editor.isDestroyed) return;
     const selection = editor.state.selection;
     if (!(selection instanceof TextSelection) || selection.empty || !editor.isFocused) { setSelectionAnchor(null); return; }
     const start = editor.view.coordsAtPos(selection.from);
-    setSelectionAnchor({ element: null, point: { x: start.left, y: start.top }, mode: 'selection', from: selection.from, to: selection.to });
+    setSelectionAnchor(current => current?.from === selection.from && current.to === selection.to
+      ? current : { element: null, point: { x: start.left, y: start.top }, mode: 'selection', from: selection.from, to: selection.to });
   }, [editor]);
+  const close = useCallback((restore = false) => {
+    const value = current.current;
+    if (value?.type === 'slash') dismissed.current = `${value.pos}:${value.command?.from}:${value.query || ''}`;
+    commit(null); setSelectionAnchor(null);
+    if (restore && value && editor && restoreTarget(editor, value)) requestAnimationFrame(trackSelection);
+  }, [editor, commit, trackSelection]);
   useEffect(() => {
     if (!editor) return;
     const slash = () => {

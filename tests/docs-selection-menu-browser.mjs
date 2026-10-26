@@ -24,6 +24,8 @@ async function untilSaved(page, check) {
     if (check.kind === 'quote') return all.filter(n => n.type === 'blockquote' && nodes(n).some(t => t.text === 'Quote via slash')).length === check.count;
     if (check.kind === 'timeline') return all.some(n => n.type === 'docsTimeline' && n.attrs?.source === check.source);
     if (check.kind === 'color') return all.some(n => n.text === 'Selected text for styling' && n.marks?.some(m => m.type === 'textStyle' && m.attrs?.color === check.value));
+    if (check.kind === 'align') return all.some(n => n.type === 'paragraph' && n.attrs?.textAlign === check.value && nodes(n).some(t => t.text === 'Selected text for styling'));
+    if (check.kind === 'indent') return all.some(n => n.type === 'paragraph' && n.attrs?.blockIndent === check.value && nodes(n).some(t => t.text === 'Selected text for styling'));
     if (check.kind === 'heading') return all.some(n => n.type === 'heading' && n.attrs?.level === 7 && nodes(n).some(t => t.text === 'Quote via slash'));
     return false;
   }, { key, check }, { timeout: 12000 });
@@ -78,6 +80,69 @@ for (const width of [1365, 390]) {
       const floating = page.locator('.docs-selection-toolbar');
       const toolbar = floating.getByRole('toolbar', { name: 'Selection formatting' });
       await toolbar.waitFor({ state: 'visible' });
+      await toolbar.getByRole('button', { name: 'Link' }).click();
+      const linkDialog = page.getByRole('dialog', { name: 'Edit link' });
+      await linkDialog.waitFor({ state: 'visible' });
+      await linkDialog.getByRole('button', { name: 'Cancel' }).click();
+      await linkDialog.waitFor({ state: 'hidden' });
+      await toolbar.waitFor({ state: 'visible' });
+      await page.waitForFunction(() => window.getSelection()?.toString().trim() === 'Selected text for styling');
+      await toolbar.getByRole('button', { name: 'Comment' }).click();
+      const commentDialog = page.getByRole('dialog', { name: 'Add comment' });
+      await commentDialog.waitFor({ state: 'visible' });
+      await commentDialog.getByRole('button', { name: 'Cancel' }).click();
+      await commentDialog.waitFor({ state: 'hidden' });
+      await toolbar.waitFor({ state: 'visible' });
+      await page.waitForFunction(() => window.getSelection()?.toString().trim() === 'Selected text for styling');
+      if (width > 1200) {
+        const selectedParagraph = editor.locator(':scope > p').filter({ hasText: 'Selected text for styling' });
+        const textBox = await selectedParagraph.evaluate(paragraph => {
+          const range = document.createRange(); range.selectNodeContents(paragraph);
+          const rect = range.getBoundingClientRect();
+          return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+        });
+        assert.ok(textBox.width > 0 && textBox.height > 0);
+        const dragY = textBox.y + textBox.height / 2;
+        await page.mouse.click(textBox.x + 1, dragY);
+        await page.mouse.move(textBox.x + 1, dragY);
+        await page.mouse.down();
+        await page.mouse.move(textBox.x + textBox.width - 1, dragY, { steps: 8 });
+        await page.mouse.up();
+        await page.waitForFunction(() => window.getSelection()?.toString().trim() === 'Selected text for styling');
+        await toolbar.waitFor({ state: 'visible' });
+      }
+      await toolbar.getByRole('button', { name: 'Close formatting toolbar' }).click();
+      await floating.waitFor({ state: 'hidden' });
+      await selectParagraph(page);
+      const alignment = toolbar.getByRole('button', { name: 'Text alignment' });
+      assert.ok(await alignment.isVisible(), 'Alignment should be directly available like Lark');
+      const beforePopover = await floating.boundingBox(), beforeScroll = await page.evaluate(() => window.scrollY);
+      await alignment.click();
+      const alignmentMenu = floating.getByRole('menu', { name: 'Text alignment' });
+      await alignmentMenu.waitFor({ state: 'visible' });
+      await alignmentMenu.getByRole('menuitemradio', { name: 'Align center' }).click();
+      await untilSaved(page, { kind: 'align', value: 'center' });
+      await alignment.click();
+      await alignmentMenu.getByRole('menuitemradio', { name: 'Align left' }).click();
+      await untilSaved(page, { kind: 'align', value: 'left' });
+      await alignment.click();
+      await alignmentMenu.getByRole('menuitem', { name: 'Increase indent' }).click();
+      await untilSaved(page, { kind: 'indent', value: 1 });
+      await alignment.click();
+      await alignmentMenu.getByRole('menuitem', { name: 'Decrease indent' }).click();
+      await untilSaved(page, { kind: 'indent', value: 0 });
+      const afterAlignment = await floating.boundingBox();
+      assert.ok(beforePopover && afterAlignment && Math.abs(beforePopover.y - afterAlignment.y) < 1,
+        'Opening and using the alignment popover must not move the floating bar');
+      assert.equal(await page.evaluate(() => window.scrollY), beforeScroll, 'Formatting controls must not scroll the document');
+      await toolbar.getByRole('button', { name: 'More formatting' }).click();
+      const beforeMore = await floating.boundingBox();
+      await floating.locator('.docs-selection-panel').waitFor({ state: 'visible' });
+      const afterMore = await floating.boundingBox();
+      assert.ok(beforeMore && afterMore && Math.abs(beforeMore.width - afterMore.width) < 1 && Math.abs(beforeMore.x - afterMore.x) < 1,
+        'Opening More must overlay the compact toolbar without resizing or shifting it');
+      await toolbar.getByRole('button', { name: 'More formatting' }).click();
+      await floating.locator('.docs-selection-panel').waitFor({ state: 'hidden' });
       await toolbar.getByRole('button', { name: 'Bold' }).click();
       await untilSaved(page, { kind: 'bold', present: true });
       await undo();

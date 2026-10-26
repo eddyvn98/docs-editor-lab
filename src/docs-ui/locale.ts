@@ -40,6 +40,8 @@ const vi: Record<string, string> = {
   Text: 'V\u0103n b\u1ea3n', 'Heading 1': 'Ti\u00eau \u0111\u1ec1 1', 'Heading 2': 'Ti\u00eau \u0111\u1ec1 2', 'Heading 3': 'Ti\u00eau \u0111\u1ec1 3',
   'Heading 4': 'Ti\u00eau \u0111\u1ec1 4', 'Heading 5': 'Ti\u00eau \u0111\u1ec1 5', 'Heading 6': 'Ti\u00eau \u0111\u1ec1 6', 'Heading 7': 'Ti\u00eau \u0111\u1ec1 7', 'Heading 8': 'Ti\u00eau \u0111\u1ec1 8', 'Heading 9': 'Ti\u00eau \u0111\u1ec1 9',
   'Bullet list': 'Danh s\u00e1ch d\u1ea5u \u0111\u1ea7u d\u00f2ng', 'Numbered list': 'Danh s\u00e1ch \u0111\u00e1nh s\u1ed1', Checklist: 'Danh s\u00e1ch ki\u1ec3m tra',
+  'Text alignment': 'C\u0103n l\u1ec1', 'Align left': 'C\u0103n tr\u00e1i', 'Align center': 'C\u0103n gi\u1eefa', 'Align right': 'C\u0103n ph\u1ea3i',
+  'Increase indent': 'T\u0103ng th\u1ee5t l\u1ec1', 'Decrease indent': 'Gi\u1ea3m th\u1ee5t l\u1ec1',
   Quote: 'Tr\u00edch d\u1eabn', Callout: '\u00d4 nh\u1ea5n m\u1ea1nh', 'Code block': 'Kh\u1ed1i m\u00e3', Divider: '\u0110\u01b0\u1eddng ph\u00e2n c\u00e1ch',
   Image: 'H\u00ecnh \u1ea3nh', Table: 'B\u1ea3ng', '2 columns': '2 c\u1ed9t', '3 columns': '3 c\u1ed9t', '4 columns': '4 c\u1ed9t',
   'Image gallery': 'B\u1ed1 c\u1ee5c \u1ea3nh', Equation: 'C\u00f4ng th\u1ee9c', 'Inline equation': 'C\u00f4ng th\u1ee9c trong d\u00f2ng',
