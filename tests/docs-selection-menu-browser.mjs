@@ -7,7 +7,7 @@ const key = 'docs-editor-lab-session-v4';
 const starting = { version: 2, title: 'Selection + slash isolated QA', comments: [],
   savedAt: new Date(0).toISOString(), doc: { type: 'doc', content: [
     { type: 'paragraph', content: [{ type: 'text', text: 'Selected text for styling' }] },
-    { type: 'paragraph' },
+    { type: 'paragraph', content: [{ type: 'text', text: 'Comment target' }] }, { type: 'paragraph' },
   ] } };
 const walk = (node, list = []) => { if (!node) return list; list.push(node);
   for (const part of node.content || []) walk(part, list); return list; };
@@ -26,6 +26,9 @@ async function untilSaved(page, check) {
     if (check.kind === 'color') return all.some(n => n.text === 'Selected text for styling' && n.marks?.some(m => m.type === 'textStyle' && m.attrs?.color === check.value));
     if (check.kind === 'align') return all.some(n => n.type === 'paragraph' && n.attrs?.textAlign === check.value && nodes(n).some(t => t.text === 'Selected text for styling'));
     if (check.kind === 'indent') return all.some(n => n.type === 'paragraph' && n.attrs?.blockIndent === check.value && nodes(n).some(t => t.text === 'Selected text for styling'));
+    if (check.kind === 'link') return all.some(n => n.type === 'text' && n.text === 'Selected text for styling' &&
+      (n.marks ?? []).some(m => m.type === 'link' && m.attrs?.href === check.href) === check.present);
+    if (check.kind === 'comment') return (snapshot.comments ?? []).some(comment => comment.text === check.text) === check.present;
     if (check.kind === 'heading') return all.some(n => n.type === 'heading' && n.attrs?.level === 7 && nodes(n).some(t => t.text === 'Quote via slash'));
     return false;
   }, { key, check }, { timeout: 12000 });
@@ -37,21 +40,16 @@ async function chooseBlock(page) {
   // The option's accessible name includes its description as well as its label.
   await dialog.getByRole('option', { name: /^Timeline/ }).click();
 }
-async function selectParagraph(page) {
+async function selectParagraph(page, value = 'Selected text for styling') {
   const dismiss = page.getByRole('button', { name: 'Close formatting toolbar' });
   if (await dismiss.isVisible()) {
     await dismiss.click();
     await page.locator('.docs-selection-toolbar').waitFor({ state: 'hidden' });
   }
-  // Place a real caret in the paragraph, then extend the range with keyboard
-  // navigation; this reselects the same text reliably after Undo/Redo.
-  const paragraph = page.locator('.ProseMirror > p').filter({ hasText: 'Selected text for styling' });
+  const paragraph = page.locator('.ProseMirror > p').filter({ hasText: value });
   await paragraph.click();
-  await page.keyboard.press('Home');
-  await page.keyboard.press('Shift+End');
-  await page.waitForFunction(() =>
-    window.getSelection()?.toString().trim() === 'Selected text for styling',
-  );
+  await paragraph.selectText();
+  await page.waitForFunction(expected => window.getSelection()?.toString().trim() === expected, value);
   await page.getByRole('toolbar', { name: 'Selection formatting' }).waitFor({ state: 'visible' });
 }
 for (const width of [1365, 390]) {
@@ -87,15 +85,44 @@ for (const width of [1365, 390]) {
       await linkDialog.waitFor({ state: 'hidden' });
       await toolbar.waitFor({ state: 'visible' });
       await page.waitForFunction(() => window.getSelection()?.toString().trim() === 'Selected text for styling');
+      const linkHref = 'https://example.test/docs';
+      await toolbar.getByRole('button', { name: 'Link' }).click();
+      await linkDialog.getByLabel('Link URL').fill(linkHref);
+      await linkDialog.getByRole('button', { name: 'Save' }).click();
+      await linkDialog.waitFor({ state: 'hidden' });
+      await untilSaved(page, { kind: 'link', href: linkHref, present: true });
+      await toolbar.waitFor({ state: 'visible' });
+      assert.equal(await page.evaluate(() => window.getSelection()?.toString().trim()), 'Selected text for styling',
+        'Applying a link restores the selected text and formatting toolbar');
+      await undo();
+      await untilSaved(page, { kind: 'link', href: linkHref, present: false });
+      await redo();
+      await untilSaved(page, { kind: 'link', href: linkHref, present: true });
+      if (width <= 1000) await toolbar.waitFor({ state: 'visible' });
+      await undo();
+      await untilSaved(page, { kind: 'link', href: linkHref, present: false });
+
+      await selectParagraph(page, 'Comment target');
       await toolbar.getByRole('button', { name: 'Comment' }).click();
       const commentDialog = page.getByRole('dialog', { name: 'Add comment' });
       await commentDialog.waitFor({ state: 'visible' });
       await commentDialog.getByRole('button', { name: 'Cancel' }).click();
       await commentDialog.waitFor({ state: 'hidden' });
       await toolbar.waitFor({ state: 'visible' });
-      await page.waitForFunction(() => window.getSelection()?.toString().trim() === 'Selected text for styling');
+      await page.waitForFunction(() => window.getSelection()?.toString().trim() === 'Comment target');
+      const commentText = 'Please keep this wording.';
+      await toolbar.getByRole('button', { name: 'Comment' }).click();
+      await commentDialog.getByLabel('Comment').fill(commentText);
+      await commentDialog.getByRole('button', { name: 'Add comment' }).click();
+      await commentDialog.waitFor({ state: 'hidden' });
+      await untilSaved(page, { kind: 'comment', text: commentText, present: true });
+      await toolbar.waitFor({ state: 'visible' });
+      assert.equal(await page.evaluate(() => window.getSelection()?.toString().trim()), 'Comment target',
+        'Adding a comment restores the selected text and formatting toolbar');
+      assert.equal(await page.locator('.docs-comments-panel').getByText(commentText, { exact: true }).count(), 1,
+        'Adding a comment opens its visible thread');
       if (width > 1200) {
-        const selectedParagraph = editor.locator(':scope > p').filter({ hasText: 'Selected text for styling' });
+        const selectedParagraph = editor.locator(':scope > p').filter({ hasText: 'Comment target' });
         const textBox = await selectedParagraph.evaluate(paragraph => {
           const range = document.createRange(); range.selectNodeContents(paragraph);
           const rect = range.getBoundingClientRect();
@@ -108,10 +135,13 @@ for (const width of [1365, 390]) {
         await page.mouse.down();
         await page.mouse.move(textBox.x + textBox.width - 1, dragY, { steps: 8 });
         await page.mouse.up();
-        await page.waitForFunction(() => window.getSelection()?.toString().trim() === 'Selected text for styling');
+        await page.waitForFunction(() => window.getSelection()?.toString().trim() === 'Comment target');
         await toolbar.waitFor({ state: 'visible' });
       }
-      await toolbar.getByRole('button', { name: 'Close formatting toolbar' }).click();
+      await page.getByRole('button', { name: 'Close comments' }).click();
+      await page.locator('.docs-comments-panel').waitFor({ state: 'hidden' });
+      const closeToolbar = toolbar.getByRole('button', { name: 'Close formatting toolbar' });
+      if (await closeToolbar.isVisible()) await closeToolbar.click();
       await floating.waitFor({ state: 'hidden' });
       await selectParagraph(page);
       const alignment = toolbar.getByRole('button', { name: 'Text alignment' });
@@ -223,6 +253,10 @@ for (const width of [1365, 390]) {
       await page.reload({ waitUntil: 'networkidle' });
       const restored = await saved(page);
       assert.deepEqual(restored.doc, snapshot.doc);
+      assert.equal(restored.comments?.length, snapshot.comments?.length, 'Comment thread count persists after reload');
+      assert.equal(restored.comments?.[0]?.text, snapshot.comments?.[0]?.text, 'Comment text persists after reload');
+      assert.equal(restored.comments?.[0]?.excerpt, snapshot.comments?.[0]?.excerpt, 'Comment anchor text persists after reload');
+      assert.equal(await page.locator('.ProseMirror .comment-anchor').count(), 1, 'Comment anchor is restored with its thread');
       assert.deepEqual(errors, []);
       await context.close();
     } finally { await browser.close(); }

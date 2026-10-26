@@ -47,7 +47,7 @@ export function DetailPopover({ editor, popup, onClose, onComment }: {
         if (!note.trim()) throw new Error('Write a comment first.');
         onComment(note.trim());
       }
-      editor.view.focus(); onClose(false);
+      editor.view.focus(); onClose(popup.type !== 'image');
     } catch (failure) { setError(failure instanceof Error ? failure.message : 'The action could not be completed.'); }
   };
   return <Anchored editor={editor} anchor={popup.anchor} wide className="detail-panel">
