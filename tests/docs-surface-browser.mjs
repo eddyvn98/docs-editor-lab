@@ -19,6 +19,9 @@ try {
     page.on('pageerror',e=>errors.push(e.message));
     await page.goto(origin); const editor=page.locator('.ProseMirror'); await editor.waitFor();
     assert.equal(await page.locator('.format-dock').count(),0,'formatting is contextual, not pinned');
+    // Diagnose missing fixture immediately; do not mask a product regression with timeout.
+    const initialCodeControls=await editor.getByLabel('Code language').count();
+    assert.ok(initialCodeControls>0, 'The isolated Docs fixture must contain a real code block and its Code language control');
     await editor.locator('> p').first().click();
     await page.keyboard.press('Home'); await page.keyboard.press('Shift+End');
     await page.getByRole('toolbar',{name:'Selection formatting'}).waitFor();
@@ -40,6 +43,8 @@ try {
     assert.equal(await editor.locator('.callout-card').first().evaluate(el=>el.style.backgroundColor),'rgb(255, 243, 207)');
     assert.equal(await editor.locator('.callout-card').first().evaluate(el=>el.style.color),'rgb(18, 52, 86)');
 
+    assert.equal(await editor.getByLabel('Code language').count(),initialCodeControls,
+      'Formatting a callout must not remove code block language controls');
     await editor.getByLabel('Code language').first().selectOption('javascript');
     assert.ok(await editor.locator('.code-token-keyword').count()>0);
     await editor.getByRole('button',{name:'Wrap code lines'}).first().click();

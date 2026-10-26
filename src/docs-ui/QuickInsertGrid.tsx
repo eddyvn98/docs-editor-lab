@@ -6,7 +6,8 @@ export const quickInsertIds = [
   'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'h7', 'h8',
   'numbered', 'bullet', 'task', 'code', 'quote', 'callout', 'toggle', 'divider', 'equation', 'paragraph',
 ];
-export const commonShortcutIds = new Set(['task', 'callout', 'equation']);
+// A block appears once per menu. Quick actions are not repeated under Common.
+export const commonShortcutIds = new Set<string>();
 
 type Props = {
   items: Item[];

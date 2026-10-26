@@ -22,10 +22,12 @@ Playwright is deliberately optional and is not declared in `package.json`.
 `npm ci` without Playwright. Browser-only suites use the `-browser.mjs`
 suffix so they are run explicitly rather than by the unit-test glob.
 
-Use a clean isolated checkout (Node.js 22 or later). Terminal 1:
+For this milestone use the existing checkout on `gpt/docs-core-ux-continuation` (Node.js 22 or later).
+Inspect `git status --short` before running, preserve untracked dependency files,
+and do not create a new clone or worktree. Terminal 1:
 
 ```bash
-npm ci
+git status --short
 npm test
 npm run build
 # Install optional local browser QA tools without changing committed manifests:
@@ -42,6 +44,8 @@ EDITOR_URL=http://127.0.0.1:4184/ node --test tests/docs-outline-mobile-browser.
 EDITOR_URL=http://127.0.0.1:4184/ node --test tests/docs-ux-milestone-browser.mjs
 EDITOR_URL=http://127.0.0.1:4184/ node --test tests/docs-rich-block-browser.mjs
 EDITOR_URL=http://127.0.0.1:4184/ node --test tests/gutter-drag-browser.mjs
+EDITOR_URL=http://127.0.0.1:4184/ node tests/docs-insert-menu-layout-browser.mjs
+EDITOR_URL=http://127.0.0.1:4184/ node --test tests/docs-core-typing-browser.mjs
 ```
 
 The selection/menu and rich-block suites exercise 1365px and 390px;
@@ -51,3 +55,27 @@ form the Docs-only browser acceptance set. The legacy
 part of this in-scope acceptance run. A missing Playwright installation,
 Chromium binary, or running local server is not a PASS. Do not commit
 the optional dependency to `package.json` or the lockfile; no CI changes.
+
+
+### Extended Docs core keyboard and surface acceptance
+
+The menu/layout and typing suites above guard unique Checklist/Callout/Equation
+actions in plus/slash menus, paragraph Tab/Shift+Tab, Arrow/Backspace/Delete,
+Enter, nested checklist indentation, slash conversion, and saved JSON reload.
+Run both viewport cases and report failures separately; do not mark a case
+PASS from a source inspection or from a previous commit.
+
+The existing surface suite also exercises Callout palette, code language,
+inline slash, templates, and image controls. It runs with a separate environment
+variable and a browser context isolated from user data:
+
+`TEST_BASE_URL=http://127.0.0.1:4184/ node tests/docs-surface-browser.mjs`
+
+If it fails on the Code language step, the test now checks that the fixture
+contained code controls *before* formatting and that they remain afterward.
+Use the earliest failing assertion to classify fixture setup vs product data
+loss. Do not hide the failure by increasing timeouts.
+
+A GitHub-only source patch may be pushed as an explicitly unverified QA candidate.
+Do not mark acceptance complete until the local build and affected browser
+suites pass on that exact commit. Never stage optional dependency files.
