@@ -15,6 +15,7 @@ import { executeAction } from './handleAction';
 import { useDocumentState } from './useDocumentState';
 import { useEditorShortcuts } from './useEditorShortcuts';
 import { handleEditorTab } from './docs-content/handleEditorTab';
+import { handlePageBreakEditing } from './docs-content/handlePageBreakEditing';
 import { downloadText, RECOVERY_KEY } from './storage';
 import { sanitizeHTML } from './contentIO';
 import { safeLink } from './safety';
@@ -58,9 +59,9 @@ export default function App() {
     editorProps: {
       attributes: { 'aria-label': 'Document content', role: 'textbox', 'aria-multiline': 'true' },
       transformPastedHTML: sanitizeHTML,
-      handleKeyDown(_view, event) {
+      handleKeyDown(view, event) {
         const instance = editorRef.current;
-        if (instance?.isEditable) return handleEditorTab(instance, event);
+        if (instance?.isEditable) return handlePageBreakEditing(view, event) || handleEditorTab(instance, event);
         if (instance?.isEditable !== false) return false;
         if ((event.ctrlKey || event.metaKey) && ['b','i','u','z','y','k','d','m','v','x'].includes(event.key.toLowerCase())) { event.preventDefault(); return true; }
         return false;

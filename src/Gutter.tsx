@@ -9,7 +9,11 @@ export function Gutter({ hover, onMenu, onInsert, onPointerDown, onLeave, onEnte
   const [point, setPoint] = useState({ left: -100, top: -100 });
   useLayoutEffect(() => {
     if (!hover) return;
-    const refresh = () => { const rect = hover.element.getBoundingClientRect(); setPoint({ left: Math.max(4, rect.left - 52), top: rect.top + Math.min(6, Math.max(0, rect.height - 28)) }); };
+    const refresh = () => {
+      const rect = hover.element.getBoundingClientRect();
+      const isTextBlock = hover.element.matches('p,h1,h2,h3,h4,h5,h6,li,blockquote');
+      setPoint({ left: Math.max(4, rect.left - 52), top: rect.top + (isTextBlock ? -3 : Math.min(6, Math.max(0, rect.height - 28))) });
+    };
     refresh(); window.addEventListener('scroll', refresh, true); window.addEventListener('resize', refresh);
     const observer = new ResizeObserver(refresh); observer.observe(hover.element);
     return () => { observer.disconnect(); window.removeEventListener('scroll', refresh, true); window.removeEventListener('resize', refresh); };

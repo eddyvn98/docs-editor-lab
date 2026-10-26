@@ -47,6 +47,6 @@ export const PageBreak = Node.create({
   name: "pageBreak", group: "block", atom: true, selectable: true,
   parseHTML() { return [{ tag: 'div[data-type="pageBreak"]' }]; },
   renderHTML({ HTMLAttributes }) {
-    return ["div", mergeAttributes(HTMLAttributes, { "data-type": "pageBreak", class: "document-page-break", contenteditable: "false", role: "separator", "aria-label": "Page break", style: "break-after:page;page-break-after:always" })];
+    return ["div", mergeAttributes(HTMLAttributes, { "data-type": "pageBreak", class: "document-page-break", contenteditable: "false", role: "separator", "aria-label": "Page break" })];
   },
 });
