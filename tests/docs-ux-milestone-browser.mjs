@@ -30,7 +30,20 @@ for (const width of [1365, 390]) {
       if (width <= 1000) {
         await page.getByRole('button', { name: 'Toggle outline and comments' }).click();
         await page.locator('#docs-outline').waitFor({ state: 'visible' });
+        await page.getByRole('button', { name: 'Close outline' }).click();
       }
+      await editor.locator('> p').first().click();
+      await page.keyboard.press('Tab');
+      assert.equal(await editor.locator('> p').first().getAttribute('data-block-indent'), '1', 'Tab indents the current paragraph');
+      assert.equal(await editor.evaluate(node => document.activeElement === node), true, 'Tab keeps focus in the editor');
+      await page.keyboard.press('Shift+Tab');
+      assert.equal(await editor.locator('> p').first().getAttribute('data-block-indent'), null, 'Shift+Tab removes paragraph indent');
+      await page.keyboard.press('Tab');
+      await page.keyboard.press(`${mod}+z`);
+      assert.equal(await editor.locator('> p').first().getAttribute('data-block-indent'), null, 'Undo restores paragraph indentation');
+      await page.keyboard.press(`${mod}+y`);
+      assert.equal(await editor.locator('> p').first().getAttribute('data-block-indent'), '1', 'Redo reapplies paragraph indentation');
+      if (width <= 1000) await page.getByRole('button', { name: 'Toggle outline and comments' }).click();
       await page.getByRole('button', { name: 'Collapse all' }).click();
       const collapsedBeforeSearch = await page.evaluate(() => localStorage.getItem('docs-editor-lab-folding-v1'));
       if (width <= 1000) await page.getByRole('button', { name: 'Close outline' }).click();
@@ -68,6 +81,9 @@ for (const width of [1365, 390]) {
       assert.equal(await editor.evaluate(node => document.activeElement === node), true, 'The editor should regain focus after keyboard insertion');
       await page.keyboard.type('Keyboard cell entry');
       assert.match(await table.innerText(), /Keyboard cell entry/, 'The restored caret should accept keyboard input in the inserted table');
+      await page.keyboard.press('Tab');
+      await page.keyboard.type('Next table cell');
+      assert.match(await table.innerText(), /Next table cell/, 'Tab should continue to advance through table cells');
       await context.close();
     } finally { await browser.close(); }
   });
