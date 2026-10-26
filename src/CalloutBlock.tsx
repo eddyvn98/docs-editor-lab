@@ -4,12 +4,20 @@ import { NodeViewContent, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap
 import type { NodeViewProps } from '@tiptap/react';
 import { calloutIcon, calloutIcons, blockColors, blockCSS, hexColor } from './blockStyleModel';
 
-function CalloutView({ node, editor, updateAttributes }: NodeViewProps) {
-  const [open, setOpen] = useState(false), ref = useRef<HTMLDivElement>(null);
+const openCallouts = new WeakMap<NodeViewProps['editor'], string>();
+
+function CalloutView({ node, editor, updateAttributes, getPos }: NodeViewProps) {
+  const id = String(node.attrs.blockId || getPos());
+  const [open, setOpen] = useState(() => !!id && openCallouts.get(editor) === id), ref = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const setAppearanceOpen = (value: boolean) => {
+    if (value && id) openCallouts.set(editor, id);
+    else if (id && openCallouts.get(editor) === id) openCallouts.delete(editor);
+    setOpen(value);
+  };
   useEffect(() => {
     if (!open) return;
-    const outside = (event: PointerEvent) => { if (!ref.current?.contains(event.target as globalThis.Node)) setOpen(false); };
+    const outside = (event: PointerEvent) => { if (!ref.current?.contains(event.target as globalThis.Node)) setAppearanceOpen(false); };
     document.addEventListener('pointerdown', outside);
     return () => document.removeEventListener('pointerdown', outside);
   }, [open]);
@@ -19,10 +27,10 @@ function CalloutView({ node, editor, updateAttributes }: NodeViewProps) {
     className="callout callout-card" style={blockCSS(node.attrs)}>
     <div ref={ref} className="callout-controls" contentEditable={false} data-node-controls data-ux-overlay
       onClick={event => event.stopPropagation()} onKeyDown={event => {
-        if (event.key === 'Escape' && open) { event.preventDefault(); event.stopPropagation(); setOpen(false); trigger.current?.focus(); }
+        if (event.key === 'Escape' && open) { event.preventDefault(); event.stopPropagation(); setAppearanceOpen(false); trigger.current?.focus(); }
       }}>
       <button ref={trigger} type="button" className="callout-icon" aria-label="Callout appearance" aria-expanded={open}
-        onClick={() => { if (editor.isEditable) setOpen(value => !value); }}>{icon}</button>
+        onClick={() => { if (editor.isEditable) setAppearanceOpen(!open); }}>{icon}</button>
       {open && editor.isEditable && <div className="callout-palette" role="group" aria-label="Callout settings">
         <strong>Callout</strong><div className="callout-icons" aria-label="Callout icons">{calloutIcons.map(value =>
           <button key={value} type="button" aria-label={`Icon ${value}`} aria-pressed={icon === value}
@@ -35,7 +43,7 @@ function CalloutView({ node, editor, updateAttributes }: NodeViewProps) {
         <label>Border color<input aria-label="Callout border color" type="color" value={hexColor(node.attrs.calloutBorder) || '#dce7fd'}
           onChange={event => change({ calloutBorder: event.target.value })}/></label>
         <button type="button" onClick={() => change({ calloutIcon: calloutIcons[0], blockTextColor: null, blockBackground: null, calloutBorder: null })}>Reset appearance</button>
-        <button type="button" onClick={() => { setOpen(false); trigger.current?.focus(); }}>Done</button>
+        <button type="button" onClick={() => { setAppearanceOpen(false); trigger.current?.focus(); }}>Done</button>
       </div>}
     </div>
     <NodeViewContent className="callout-body"/>

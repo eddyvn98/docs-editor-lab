@@ -27,8 +27,15 @@ try {
     await page.keyboard.press('Escape');
 
     await page.getByRole('button',{name:'Callout appearance',exact:true}).first().click();
+    const calloutSettings=page.getByRole('group',{name:'Callout settings'});
     await page.getByRole('button',{name:'Callout background #fff3cf',exact:true}).click();
+    await calloutSettings.waitFor({state:'visible'});
+    assert.equal(await page.getByRole('button',{name:'Callout appearance',exact:true}).first().getAttribute('aria-expanded'),'true',
+      'Changing the callout background keeps its appearance palette open');
     await page.getByLabel('Callout text color').fill('#123456');
+    await calloutSettings.waitFor({state:'visible'});
+    assert.equal(await page.getByRole('button',{name:'Callout appearance',exact:true}).first().getAttribute('aria-expanded'),'true',
+      'Changing the callout text color keeps its appearance palette open');
     await page.getByRole('button',{name:'Done',exact:true}).click();
     assert.equal(await editor.locator('.callout-card').first().evaluate(el=>el.style.backgroundColor),'rgb(255, 243, 207)');
     assert.equal(await editor.locator('.callout-card').first().evaluate(el=>el.style.color),'rgb(18, 52, 86)');
