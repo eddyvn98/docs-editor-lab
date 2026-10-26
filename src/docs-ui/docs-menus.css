@@ -52,8 +52,11 @@
 .docs-primary { background:#3370ff!important; color:white!important; border:1px solid #3370ff!important; border-radius:5px; padding:6px 10px; }
 .docs-table-picker > .docs-primary { width:100%; }
 .docs-selection-toolbar { display:block; padding:5px; max-width:calc(100vw - 16px); width:max-content; min-width:0; }
+.docs-selection-toolbar.has-conversion-panel { padding:0; border:0; background:transparent; box-shadow:none; }
+.docs-selection-toolbar.has-conversion-panel .selection-controls { padding:5px; border:1px solid var(--docs-border); border-radius:7px; background:var(--docs-surface); box-shadow:var(--docs-shadow); }
 .docs-selection-toolbar .selection-controls { display:flex; flex-wrap:nowrap; gap:1px; align-items:center; max-width:100%; overflow-x:auto; scrollbar-width:thin; padding:0; }
 .docs-selection-toolbar .selection-controls button,.docs-selection-panel-row > button { width:30px; height:30px; padding:5px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; background:transparent; color:var(--docs-ink); border:0; border-radius:4px; }
+.docs-selection-toolbar .selection-controls .docs-block-type-trigger { width:auto; max-width:118px; min-width:72px; gap:3px; justify-content:space-between; padding:4px 6px; font-size:12px; }
 .docs-selection-toolbar button:hover,.docs-selection-toolbar button.active { background:var(--docs-hover); color:var(--docs-blue); }
 .docs-selection-toolbar select { max-width:105px; min-height:30px; background:var(--docs-surface); color:var(--docs-ink); border:0; border-radius:4px; padding:3px; font-size:12px; }
 .docs-selection-toolbar .docs-alignment-trigger { display:inline-flex; align-items:center; gap:1px; padding:4px; }
@@ -64,6 +67,12 @@
 .docs-alignment-panel > button:hover,.docs-alignment-panel > button[aria-checked=true] { background:var(--docs-hover); color:var(--docs-blue); }
 .docs-alignment-panel > button span { flex:1; }
 .docs-alignment-panel .docs-toolbar-divider { display:block; width:auto; height:1px; margin:3px 5px; }
+.docs-conversion-panel { position:relative; top:auto; right:auto; width:min(270px,calc(100vw - 16px)); max-height:min(55dvh,420px); padding:4px; margin-top:6px; }
+.docs-conversion-panel strong { padding:5px 8px; margin:0; }
+.docs-conversion-panel > button { display:flex; align-items:center; gap:9px; width:100%; min-height:31px; padding:5px 8px; border:0; border-radius:4px; background:transparent; color:var(--docs-ink); text-align:left; font:inherit; cursor:pointer; }
+.docs-conversion-panel > button:hover,.docs-conversion-panel > button[aria-checked=true] { background:var(--docs-hover); color:var(--docs-blue); }
+.docs-conversion-panel > button span:last-child { flex:1; }
+.docs-conversion-heading-mark { width:16px; text-align:center; font-size:10px; font-weight:700; }
 .docs-selection-panel strong { display:block; font-size:11px; color:var(--docs-muted); font-weight:500; margin:2px 0 8px; }
 .docs-color-grid { display:grid; grid-template-columns:repeat(10,22px); gap:5px; margin-bottom:12px; }
 .docs-color-grid button { width:22px; height:22px; border-radius:50%; border:1px solid #9993; padding:0; }
@@ -106,6 +115,7 @@
     overflow:visible!important;
     touch-action:pan-y;
   }
-  .docs-selection-toolbar .docs-selection-panel { top:auto; bottom:calc(100% + 6px); }
+  .docs-selection-toolbar .docs-selection-panel:not(.docs-conversion-panel) { top:auto; bottom:calc(100% + 6px); }
+  .docs-selection-toolbar .docs-conversion-panel { position:relative; top:auto; right:auto; bottom:auto; }
   .docs-selection-toolbar .selection-controls { max-width:100%; }
 }

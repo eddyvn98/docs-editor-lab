@@ -8,7 +8,11 @@ const text = value => ({ type: 'text', text: value });
 const paragraph = value => ({ type: 'paragraph', content: [text(value)] });
 const fixture = { version: 2, title: 'Docs core surface QA', comments: [],
   doc: { type: 'doc', content: [
-    paragraph('Bold, italic, underline, strike, inline code, link, highlight, and comments.'),
+    { type: 'paragraph', content: [
+      { type: 'text', text: 'Bold', marks: [{ type: 'bold' }] },
+      text(', italic, underline, strike, inline code, link, highlight, and comments.'),
+    ] },
+    paragraph('Second paragraph stays separate when selection crosses blocks.'),
     { type: 'callout', content: [paragraph('Callout color control')] },
     { type: 'codeBlock', attrs: { language: 'typescript' },
       content: [text('const retained = true;')] },
@@ -27,6 +31,8 @@ for (const width of [1365, 390]) {
         if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(fixture));
       }, { key, fixture });
       const page = await context.newPage(), errors = [];
+      const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
+      const undo = async () => width > 1200 ? page.getByRole('button', { name: 'Undo' }).click() : page.keyboard.press(`${mod}+z`);
       page.on('pageerror', error => errors.push(error.message));
       await page.goto(url, { waitUntil: 'networkidle' });
       const editor = page.locator('.ProseMirror');
@@ -36,6 +42,7 @@ for (const width of [1365, 390]) {
       assert.equal(await editor.getByLabel('Code language').count(), 1);
 
       const target = editor.locator(':scope > p').first();
+      await target.click();
       await target.selectText();
       const selection = await target.evaluate(element => {
         const native = window.getSelection(), pm = window.__docsQaSelection?.();
@@ -50,8 +57,94 @@ for (const width of [1365, 390]) {
       assert.equal(selection.pm?.fromOffset, 0);
       assert.equal(selection.pm?.toOffset, selection.pm?.fromParentSize);
       await page.getByRole('toolbar', { name: 'Selection formatting' }).waitFor({ state: 'visible' });
-      await page.getByLabel('Selected text style').selectOption('h3');
+      const typeTrigger = page.getByRole('button', { name: 'Block type' });
+      await typeTrigger.click();
+      const conversionMenu = page.getByRole('menu', { name: 'Text style and blocks' });
+      await conversionMenu.waitFor({ state: 'visible' });
+      for (const name of ['Text', ...Array.from({ length: 9 }, (_, index) => `Heading ${index + 1}`),
+        'Bullet list', 'Numbered list', 'Checklist', 'Code block', 'Quote', 'Callout']) {
+        const item = conversionMenu.getByRole('menuitemradio', { name, exact: true });
+        assert.equal(await item.count(), 1, `Text menu includes ${name}`);
+        assert.equal(await item.isDisabled(), false, `Text menu enables ${name} for a single paragraph`);
+      }
+      const lastConversion = conversionMenu.getByRole('menuitemradio', { name: 'Callout', exact: true });
+      await lastConversion.scrollIntoViewIfNeeded();
+      assert.equal(await lastConversion.isVisible(), true, 'The final conversion remains reachable by scrolling');
+      await conversionMenu.evaluate(panel => { panel.scrollTop = 0; });
+      const menuBox = await conversionMenu.boundingBox();
+      assert.ok(menuBox && menuBox.x >= 0 && menuBox.y >= 0 && menuBox.x + menuBox.width <= width && menuBox.y + menuBox.height <= 900,
+        'Conversion menu stays inside desktop and mobile viewports');
+      const unchanged = await read(page);
       await page.keyboard.press('Escape');
+      await conversionMenu.waitFor({ state: 'hidden' });
+      assert.deepEqual(await read(page), unchanged, 'Escape closes the menu without changing document content');
+
+      await typeTrigger.click();
+      await conversionMenu.waitFor({ state: 'visible' });
+      await conversionMenu.getByRole('menuitemradio', { name: 'Heading 3', exact: true }).click();
+      await editor.locator(':scope > h3').filter({ hasText: 'Bold, italic' }).waitFor({ state: 'visible' });
+      await page.waitForFunction(key => JSON.parse(localStorage.getItem(key) || 'null')?.doc?.content?.[0]?.type === 'heading', key);
+      const heading = (await read(page)).content[0];
+      assert.equal(heading.attrs.level, 3);
+      assert.equal(heading.content.map(node => node.text || '').join(''), 'Bold, italic, underline, strike, inline code, link, highlight, and comments.', 'Text survives block conversion');
+      assert.ok(heading.content.find(node => node.text === 'Bold')?.marks?.some(mark => mark.type === 'bold'), 'Inline marks survive block conversion');
+      assert.equal(await page.evaluate(() => window.getSelection()?.toString()), 'Bold, italic, underline, strike, inline code, link, highlight, and comments.',
+        'The selected text range is restored inside the converted heading');
+      await undo();
+      await editor.locator(':scope > p').filter({ hasText: 'Bold, italic' }).waitFor({ state: 'visible' });
+      await page.waitForFunction(key => JSON.parse(localStorage.getItem(key) || 'null')?.doc?.content?.[0]?.type === 'paragraph', key);
+      assert.equal((await read(page)).content[0].type, 'paragraph', 'Undo restores the original block type');
+      await target.click();
+      await target.click();
+      await target.selectText();
+      await page.getByRole('toolbar', { name: 'Selection formatting' }).waitFor({ state: 'visible' });
+      await typeTrigger.click();
+      await conversionMenu.getByRole('menuitemradio', { name: 'Bullet list', exact: true }).click();
+      await editor.locator(':scope > ul > li p').filter({ hasText: 'Bold, italic' }).waitFor({ state: 'visible' });
+      await page.waitForFunction(key => JSON.parse(localStorage.getItem(key) || 'null')?.doc?.content?.[0]?.type === 'bulletList', key);
+      assert.equal((await read(page)).content[0].type, 'bulletList', 'Bullet conversion uses the saved selection');
+      await undo();
+      await editor.locator(':scope > p').filter({ hasText: 'Bold, italic' }).waitFor({ state: 'visible' });
+      await page.waitForFunction(key => JSON.parse(localStorage.getItem(key) || 'null')?.doc?.content?.[0]?.type === 'paragraph', key);
+      await target.click();
+      await target.selectText();
+      await page.getByRole('toolbar', { name: 'Selection formatting' }).waitFor({ state: 'visible' });
+      await typeTrigger.click();
+      await conversionMenu.getByRole('menuitemradio', { name: 'Quote', exact: true }).click();
+      await editor.locator('blockquote > p').filter({ hasText: 'Bold, italic' }).waitFor({ state: 'visible' });
+      await page.waitForFunction(key => JSON.parse(localStorage.getItem(key) || 'null')?.doc?.content?.[0]?.type === 'blockquote', key);
+      assert.equal((await read(page)).content[0].type, 'blockquote', 'Quote conversion uses the saved selection');
+      await undo();
+      await editor.locator(':scope > p').filter({ hasText: 'Bold, italic' }).waitFor({ state: 'visible' });
+      await page.waitForFunction(key => JSON.parse(localStorage.getItem(key) || 'null')?.doc?.content?.[0]?.type === 'paragraph', key);
+      await target.click();
+      await target.selectText();
+      await page.getByRole('toolbar', { name: 'Selection formatting' }).waitFor({ state: 'visible' });
+      await typeTrigger.click();
+      await conversionMenu.waitFor({ state: 'visible' });
+      const beforeOutsideClick = await read(page);
+      await page.mouse.click(4, 4);
+      await conversionMenu.waitFor({ state: 'hidden' });
+      assert.deepEqual(await read(page), beforeOutsideClick, 'Outside click closes the menu without converting text');
+      await editor.evaluate(root => {
+        const paragraphs = root.querySelectorAll(':scope > p');
+        const start = paragraphs[0].firstChild, end = paragraphs[1].firstChild;
+        const selection = window.getSelection();
+        if (start && end && selection) selection.setBaseAndExtent(start, 0, end, end.textContent?.length || 0);
+      });
+      await page.waitForFunction(() => window.getSelection()?.toString().includes('Second paragraph stays separate'));
+      await page.getByRole('toolbar', { name: 'Selection formatting' }).waitFor({ state: 'visible' });
+      await typeTrigger.click();
+      await conversionMenu.waitFor({ state: 'visible' });
+      assert.equal(await conversionMenu.getByRole('menuitemradio').first().isDisabled(), true,
+        'Block conversion is disabled for a selection spanning multiple paragraphs');
+      await page.keyboard.press('Escape');
+      await target.click();
+      await target.selectText();
+      await page.getByRole('toolbar', { name: 'Selection formatting' }).waitFor({ state: 'visible' });
+      await typeTrigger.click();
+      await conversionMenu.getByRole('menuitemradio', { name: 'Heading 3', exact: true }).click();
+      await page.waitForFunction(key => JSON.parse(localStorage.getItem(key) || 'null')?.doc?.content?.[0]?.type === 'heading', key);
       assert.equal(await editor.getByLabel('Code language').count(), 1,
         'Single-paragraph H3 conversion must preserve the following code block');
       assert.equal((await read(page)).content.filter(node => node.type === 'codeBlock').length, 1);

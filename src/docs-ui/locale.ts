@@ -37,7 +37,7 @@ const vi: Record<string, string> = {
   "Type '/' for commands": "Nh\u1eadp '/' cho c\u00e1c l\u1ec7nh",
   'Basic blocks': 'N\u1ed9i dung c\u01a1 b\u1ea3n', 'Common blocks': 'Th\u01b0\u1eddng d\u00f9ng', 'Search results': 'K\u1ebft qu\u1ea3 t\u00ecm ki\u1ebfm', Actions: 'Thao t\u00e1c',
   Media: '\u0110a ph\u01b0\u01a1ng ti\u1ec7n', Layout: 'B\u1ed1 c\u1ee5c', Advanced: 'N\u00e2ng cao',
-  Text: 'V\u0103n b\u1ea3n', 'Heading 1': 'Ti\u00eau \u0111\u1ec1 1', 'Heading 2': 'Ti\u00eau \u0111\u1ec1 2', 'Heading 3': 'Ti\u00eau \u0111\u1ec1 3',
+  Text: 'V\u0103n b\u1ea3n', 'Text style and blocks': 'Ki\u1ec3u v\u0103n b\u1ea3n v\u00e0 kh\u1ed1i', 'Heading 1': 'Ti\u00eau \u0111\u1ec1 1', 'Heading 2': 'Ti\u00eau \u0111\u1ec1 2', 'Heading 3': 'Ti\u00eau \u0111\u1ec1 3',
   'Heading 4': 'Ti\u00eau \u0111\u1ec1 4', 'Heading 5': 'Ti\u00eau \u0111\u1ec1 5', 'Heading 6': 'Ti\u00eau \u0111\u1ec1 6', 'Heading 7': 'Ti\u00eau \u0111\u1ec1 7', 'Heading 8': 'Ti\u00eau \u0111\u1ec1 8', 'Heading 9': 'Ti\u00eau \u0111\u1ec1 9',
   'Bullet list': 'Danh s\u00e1ch d\u1ea5u \u0111\u1ea7u d\u00f2ng', 'Numbered list': 'Danh s\u00e1ch \u0111\u00e1nh s\u1ed1', Checklist: 'Danh s\u00e1ch ki\u1ec3m tra',
   'Text alignment': 'C\u0103n l\u1ec1', 'Align left': 'C\u0103n tr\u00e1i', 'Align center': 'C\u0103n gi\u1eefa', 'Align right': 'C\u0103n ph\u1ea3i',
