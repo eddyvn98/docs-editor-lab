@@ -204,6 +204,7 @@ export default function App() {
         // ProseMirror can retain the previous block's caret after an actual click
         // (especially following Tab indentation at narrow viewports).
         requestAnimationFrame(() => { syncNativeCaret(editor); ux.trackSelection(); });
-      } }}><EditorContent editor={editor}/></div>
+      } }} onKeyUp={event => { if (!readOnly && event.target instanceof Node && editor.view.dom.contains(event.target) &&
+        !(event.target instanceof Element && event.target.closest('[data-node-controls]'))) syncNativeCaret(editor); }}><EditorContent editor={editor}/></div>
   </DocsShell>;
 }
