@@ -200,10 +200,12 @@ export default function App() {
     onHelp={() => setHelp(true)} onComment={() => openDetail('comment')} notice={notice} floating={floating}>
     <div ref={frame} className="editor-frame" onMouseMove={event => { if (!readOnly) { clearTimeout(hoverTimer.current); ux.onMouseMove(event); } }} onMouseLeave={clearHover}
       onContextMenu={event => { if (readOnly) return; if (editor.state.selection instanceof BlockRangeSelection) { event.preventDefault(); ux.close(false); editor.view.dom.dispatchEvent(new CustomEvent('docs-batch-context', { detail: { x: event.clientX, y: event.clientY } })); } else ux.onContextMenu(event); }} onClick={contentClick} onDoubleClick={event => { showImage(event); }}
-      onDragOver={event => { if (event.dataTransfer.types.includes('Files')) event.preventDefault(); }} onPointerUp={event => { if (!readOnly && event.target instanceof Node && editor.view.dom.contains(event.target)) {
-        // ProseMirror can retain the previous block's caret after an actual click
-        // (especially following Tab indentation at narrow viewports).
-        requestAnimationFrame(() => { syncNativeCaret(editor); ux.trackSelection(); });
+      onDragOver={event => { if (event.dataTransfer.types.includes('Files')) event.preventDefault(); }} onPointerUp={event => { if (!readOnly && event.button === 0 && event.target instanceof Node &&
+        editor.view.dom.contains(event.target) &&
+        !(event.target instanceof Element && event.target.closest('button,input,textarea,select,[data-node-controls],[contenteditable="false"]'))) {
+        // Only an actual collapsed browser caret may replace a stale PM text
+        // range; ongoing drag selection, IME and block controls are excluded.
+        requestAnimationFrame(() => { syncNativeCaret(editor, undefined, true); ux.trackSelection(); });
       } }} onKeyUp={event => { if (!readOnly && event.target instanceof Node && editor.view.dom.contains(event.target) &&
         !(event.target instanceof Element && event.target.closest('[data-node-controls]'))) syncNativeCaret(editor); }}><EditorContent editor={editor}/></div>
   </DocsShell>;
