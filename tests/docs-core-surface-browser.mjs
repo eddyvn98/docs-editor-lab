@@ -19,6 +19,13 @@ const fixture = { version: 2, title: 'Docs core surface QA', comments: [],
     { type: 'paragraph' },
   ] } };
 const read = page => page.evaluate(key => JSON.parse(localStorage.getItem(key) || 'null')?.doc, key);
+const assertFullSelection = async page => {
+  const state = await page.evaluate(() => ({ text: window.getSelection()?.toString(), pm: window.__docsQaSelection?.() }));
+  assert.equal(state.text, 'Bold, italic, underline, strike, inline code, link, highlight, and comments.',
+    `Block conversion restores the complete selected range: ${JSON.stringify(state.pm)}`);
+  assert.equal(state.pm?.fromOffset, 0, 'The converted text range starts at the paragraph start');
+  assert.equal(state.pm?.toOffset, state.pm?.fromParentSize, 'The converted text range ends at the paragraph end');
+};
 
 for (const width of [1365, 390]) {
   test('H3, Callout and Code remain independent at ' + width + 'px', async () => {
@@ -103,22 +110,42 @@ for (const width of [1365, 390]) {
       await editor.locator(':scope > ul > li p').filter({ hasText: 'Bold, italic' }).waitFor({ state: 'visible' });
       await page.waitForFunction(key => JSON.parse(localStorage.getItem(key) || 'null')?.doc?.content?.[0]?.type === 'bulletList', key);
       assert.equal((await read(page)).content[0].type, 'bulletList', 'Bullet conversion uses the saved selection');
+      await assertFullSelection(page);
       await undo();
       await editor.locator(':scope > p').filter({ hasText: 'Bold, italic' }).waitFor({ state: 'visible' });
       await page.waitForFunction(key => JSON.parse(localStorage.getItem(key) || 'null')?.doc?.content?.[0]?.type === 'paragraph', key);
+      for (const [label, type] of [['Numbered list', 'orderedList'], ['Checklist', 'taskList'], ['Callout', 'callout']]) {
+        await target.click();
+        await target.selectText();
+        assert.equal(await page.evaluate(() => window.getSelection()?.toString()), 'Bold, italic, underline, strike, inline code, link, highlight, and comments.');
+        await page.getByRole('toolbar', { name: 'Selection formatting' }).waitFor({ state: 'visible' });
+        await typeTrigger.click();
+        await conversionMenu.getByRole('menuitemradio', { name: label, exact: true }).click();
+        await page.waitForFunction(({ key, type }) => JSON.parse(localStorage.getItem(key) || 'null')?.doc?.content?.[0]?.type === type, { key, type });
+        assert.equal((await read(page)).content[0].type, type, `${label} conversion uses the saved selection`);
+        await assertFullSelection(page);
+        await undo();
+        await editor.locator(':scope > p').filter({ hasText: 'Bold, italic' }).waitFor({ state: 'visible' });
+        await page.waitForFunction(key => JSON.parse(localStorage.getItem(key) || 'null')?.doc?.content?.[0]?.type === 'paragraph', key);
+      }
       await target.click();
       await target.selectText();
+      assert.equal(await page.evaluate(() => window.getSelection()?.toString()), 'Bold, italic, underline, strike, inline code, link, highlight, and comments.');
       await page.getByRole('toolbar', { name: 'Selection formatting' }).waitFor({ state: 'visible' });
+      const beforeQuote = await page.evaluate(() => window.__docsQaSelection?.());
+      assert.equal(beforeQuote?.toOffset, beforeQuote?.fromParentSize, 'The source selection covers the final character');
       await typeTrigger.click();
       await conversionMenu.getByRole('menuitemradio', { name: 'Quote', exact: true }).click();
       await editor.locator('blockquote > p').filter({ hasText: 'Bold, italic' }).waitFor({ state: 'visible' });
       await page.waitForFunction(key => JSON.parse(localStorage.getItem(key) || 'null')?.doc?.content?.[0]?.type === 'blockquote', key);
       assert.equal((await read(page)).content[0].type, 'blockquote', 'Quote conversion uses the saved selection');
+      await assertFullSelection(page);
       await undo();
       await editor.locator(':scope > p').filter({ hasText: 'Bold, italic' }).waitFor({ state: 'visible' });
       await page.waitForFunction(key => JSON.parse(localStorage.getItem(key) || 'null')?.doc?.content?.[0]?.type === 'paragraph', key);
       await target.click();
       await target.selectText();
+      assert.equal(await page.evaluate(() => window.getSelection()?.toString()), 'Bold, italic, underline, strike, inline code, link, highlight, and comments.');
       await page.getByRole('toolbar', { name: 'Selection formatting' }).waitFor({ state: 'visible' });
       await typeTrigger.click();
       await conversionMenu.waitFor({ state: 'visible' });

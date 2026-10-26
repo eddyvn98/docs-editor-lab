@@ -70,12 +70,12 @@ export function SelectionToolbar({ editor, anchor, onLink, onComment }: { editor
     if (!insertBlock(editor, id, pos)) return;
     const converted = editor.state.doc.nodeAt(pos);
     if (converted) {
-      let textblock: { node: PMNode; offset: number } | null = converted.isTextblock ? { node: converted, offset: 0 } : null;
+      let textblock: { node: PMNode; start: number } | null = converted.isTextblock ? { node: converted, start: pos + 1 } : null;
       if (!textblock) converted.descendants((node, offset) => {
-        if (node.isTextblock && !textblock) { textblock = { node, offset }; return false; }
+        if (node.isTextblock && !textblock) { textblock = { node, start: pos + offset + 2 }; return false; }
       });
       if (textblock) {
-        const start = pos + textblock.offset + 1, end = start + textblock.node.content.size;
+        const { start } = textblock, end = start + textblock.node.content.size;
         editor.commands.setTextSelection({ from: Math.min(start + fromOffset, end), to: Math.min(start + toOffset, end) });
         editor.view.focus();
       }
