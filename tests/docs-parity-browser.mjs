@@ -27,18 +27,11 @@ try{
     await insertBtn.click();
     let palette=page.getByRole('dialog',{name:'Insert a block'});
     await palette.getByRole('combobox',{name:'Search blocks'}).fill('Sheets');
-    await palette.getByRole('option',{name:/Sheets/}).click();
-    const sheet=editor.locator('.inline-sheet').last();await sheet.waitFor();
-    assert.equal(await sheet.locator('tr').count(),2);
-    assert.equal(await sheet.locator('tr').first().locator('td').count(),3);
-    await sheet.getByRole('textbox',{name:'Cell 1,1'}).fill('QA value');
-    assert.equal(await sheet.getByRole('textbox',{name:'Cell 1,1'}).inputValue(),'QA value');
-    await sheet.getByRole('button',{name:'Find/replace'}).click();
-    await sheet.getByRole('textbox',{name:'Find cells'}).fill('QA');
-    await sheet.getByRole('textbox',{name:'Replace cells'}).fill('Review');
-    await sheet.getByRole('button',{name:'Replace all'}).click();
-    assert.equal(await sheet.getByRole('textbox',{name:'Cell 1,1'}).inputValue(),'Review value');
-    for(const [query,kind] of [['Table of Contents','docsToc'],['Timeline','docsTimeline'],['Mermaid','docsMermaid']]){
+    await palette.getByText('No matching blocks').waitFor();
+    await palette.getByRole('combobox',{name:'Search blocks'}).fill('Mermaid');
+    await palette.getByText('No matching blocks').waitFor();
+    await page.keyboard.press('Escape');
+    for(const [query,kind] of [['Table of Contents','docsToc'],['Timeline','docsTimeline']]){
      await page.getByRole('button',{name:'Insert block'}).click();
      palette=page.getByRole('dialog',{name:'Insert a block'});
      await palette.getByRole('combobox',{name:'Search blocks'}).fill(query);

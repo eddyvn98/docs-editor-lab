@@ -30,10 +30,10 @@ async function main() {
     // Verify groups exist
     const groups = await page.locator('.docs-menu-group').allTextContents();
     console.log('Categories found:', groups);
-    assert.ok(groups.includes('Basic') || groups.includes('Cơ bản'), 'Has Basic category');
-    assert.ok(groups.includes('Layout') || groups.includes('Bố cục'), 'Has Layout category');
-    assert.ok(groups.includes('Media'), 'Has Media category');
-    assert.ok(groups.includes('Advanced') || groups.includes('Nâng cao'), 'Has Advanced category');
+    assert.ok(groups.includes('Basic blocks') || groups.includes('Nội dung cơ bản'), 'Has compact basic block grid');
+    assert.ok(groups.includes('Common blocks') || groups.includes('Thường dùng'), 'Has common Docs blocks');
+    assert.equal(await palette.locator('.docs-quick-insert button').count(), 18, 'Quick insert grid matches the Lark layout');
+    assert.doesNotMatch(await palette.innerText(), /Sheets|Mermaid/, 'Heavy non-Docs integrations stay out of this picker');
 
     // Test search filter (e.g. Vietnamese "bảng" or English "table")
     const searchInput = page.locator('.docs-menu-search input');

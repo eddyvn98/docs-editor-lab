@@ -39,6 +39,8 @@ export const filterInserts = (query: string) => { const term = plain(query.trim(
   if (term === 'head') return insertItems.filter(item => ['h1','h2','h3'].includes(item.id));
   if (term === 'columns') return insertItems.filter(item => item.id === 'columns');
   return insertItems.filter(item => plain(`${item.label} ${searchWords[item.id] || ''}`).includes(term)); };
+const nonDocsInsertIds = new Set<Action>(['sheets','mermaid']);
+export const filterDocsInserts = (query: string) => filterInserts(query).filter(item => !nonDocsInsertIds.has(item.id));
 export type Point = { x: number; y: number };
 export type Size = { width: number; height: number };
 export function placeOverlay(p: Point, s: Size, v: Size, gap = 8): Point { return { x: Math.max(gap, Math.min(p.x, v.width - s.width - gap)), y: Math.max(gap, Math.min(p.y, v.height - s.height - gap)) }; }
